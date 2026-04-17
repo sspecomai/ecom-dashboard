@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eCom Management Dashboard v3</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0b0d12;--bg2:#111318;--bg3:#181b24;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);
+  --text:#dfe2ec;--text2:#7e8494;--text3:#454a5c;
+  --accent:#4f8ef7;--accent2:#7c5ff7;
+  --green:#27c97e;--green-bg:rgba(39,201,126,0.09);
+  --red:#f05252;--red-bg:rgba(240,82,82,0.09);
+  --amber:#f0a428;--amber-bg:rgba(240,164,40,0.09);
+  --teal:#00ccb0;--pink:#e85d8a;
+  --font:'DM Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+  --r:10px;--rl:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column}
+.main{flex:1;overflow-x:hidden;min-width:0}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30;gap:12px}
+.content{padding:18px 22px}
+.logo{padding:16px 18px 13px;border-bottom:1px solid var(--border)}
+.logo-name{font-size:13px;font-weight:600}
+.logo-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;text-transform:uppercase;letter-spacing:.06em}
+.nav-group{padding:12px 10px 6px}
+.nav-gl{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;padding:0 8px;margin-bottom:5px}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:12px;font-weight:400;transition:all .13s;margin-bottom:2px;border:none;background:transparent;width:100%;text-align:left;font-family:var(--font)}
+.nav-btn:hover{background:rgba(255,255,255,0.04);color:var(--text)}
+.nav-btn.active{background:rgba(79,142,247,0.1);color:var(--accent);font-weight:500}
+.ndot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sidebar-foot{margin-top:auto;padding:12px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);font-family:var(--mono);line-height:1.9}
+.tb-title{font-size:14px;font-weight:500}
+.tb-meta{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.tb-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.live-lbl{font-size:11px;color:var(--green);font-family:var(--mono);display:flex;align-items:center;gap:4px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.sync-btn{background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.25);color:var(--accent);font-size:11px;font-family:var(--mono);padding:5px 11px;border-radius:8px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.sync-btn:hover{background:rgba(79,142,247,0.18)}
+.sync-btn.loading{opacity:.6;pointer-events:none}
+.cfg-btn{background:rgba(124,95,247,0.1);border:1px solid rgba(124,95,247,0.22);color:var(--accent2);font-size:11px;font-family:var(--mono);padding:5px 11px;border-radius:8px;cursor:pointer}
+.sync-badge{font-size:10px;font-family:var(--mono)}.sync-badge.ok{color:var(--green)}.sync-badge.err{color:var(--red)}
+/* FILTER BAR */
+.filter-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:9px 22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:41px;z-index:29}
+.fl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.fsel{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-family:var(--font);font-size:11px;padding:5px 10px;border-radius:8px;cursor:pointer;outline:none}
+.fsel:focus,.fsel:hover{border-color:var(--accent);color:var(--text)}
+.fsel.af{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,0.08)}
+.finput{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:8px;outline:none;width:118px}
+.finput:focus{border-color:var(--accent);color:var(--text)}
+.finput::-webkit-calendar-picker-indicator{filter:invert(0.5);cursor:pointer}
+.fsep{width:1px;height:20px;background:var(--border);flex-shrink:0}
+.period-pills{display:flex;gap:4px}
+.pp{padding:4px 10px;font-size:10px;font-family:var(--mono);border:1px solid var(--border2);border-radius:20px;background:transparent;color:var(--text3);cursor:pointer;transition:all .13s;white-space:nowrap}
+.pp:hover{border-color:var(--accent);color:var(--accent)}
+.pp.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.cmp-bar{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);font-family:var(--mono)}
+.cmp-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:var(--bg3);border:1px solid var(--border)}
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);padding:24px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:5px}
+.mhint{font-size:11px;color:var(--text3);line-height:1.7;margin-bottom:16px}
+.mhint b{color:var(--text2)}.mhint code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:10px;color:var(--accent)}
+.fg{margin-bottom:11px}
+.flbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:block}
+.finp-m{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;padding:7px 10px;border-radius:8px;outline:none}
+.finp-m:focus{border-color:var(--accent)}
+.sheet-hint{font-size:10px;color:var(--text3);margin-top:3px}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.btn{padding:7px 16px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--font);border:none;font-weight:500}
+.btn-p{background:var(--accent);color:#fff}.btn-g{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+/* SECTIONS */
+.sec{display:none}.sec.active{display:block}
+/* KPI CARDS */
+.kg{display:grid;gap:9px;margin-bottom:14px}
+.g6{grid-template-columns:repeat(6,1fr)}.g5{grid-template-columns:repeat(5,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}
+.kc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:13px 15px}
+.kc.hi{border-color:rgba(79,142,247,0.22);background:linear-gradient(135deg,rgba(79,142,247,0.05),var(--bg2))}
+.kc.hi-g{border-color:rgba(39,201,126,0.22);background:linear-gradient(135deg,rgba(39,201,126,0.05),var(--bg2))}
+.kc.hi-r{border-color:rgba(240,82,82,0.22);background:linear-gradient(135deg,rgba(240,82,82,0.04),var(--bg2))}
+.kc.hi-a{border-color:rgba(240,164,40,0.22);background:linear-gradient(135deg,rgba(240,164,40,0.04),var(--bg2))}
+.kl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.kv{font-size:22px;font-weight:600;font-family:var(--mono);color:var(--text);line-height:1;margin-bottom:7px}
+.kv.sm{font-size:16px}.kv.xs{font-size:13px}
+.kbadges{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.kb{font-size:10px;font-family:var(--mono);padding:2px 6px;border-radius:5px;font-weight:500}
+.kb.up{background:var(--green-bg);color:var(--green)}.kb.dn{background:var(--red-bg);color:var(--red)}
+.kb.nu{background:rgba(126,132,148,0.1);color:var(--text2)}.kb.wa{background:var(--amber-bg);color:var(--amber)}
+.ksp{height:26px;width:100%;display:block}
+/* SECTION HEAD */
+.sh{margin-bottom:15px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.sh-l h2{font-size:18px;font-weight:600}.sh-l p{font-size:12px;color:var(--text3);margin-top:2px}
+.period-badge{font-size:10px;font-family:var(--mono);padding:4px 10px;border-radius:6px;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.2);color:var(--accent);white-space:nowrap;margin-top:4px}
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:15px;margin-bottom:13px}
+.ct{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ct-tag{font-size:9px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--text3);font-weight:400}
+.cw{position:relative;width:100%}
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:6px 9px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+td{padding:6px 9px;border-bottom:1px solid var(--border);color:var(--text2);white-space:nowrap}
+tr:hover td{background:rgba(255,255,255,0.015)}
+.nr{text-align:right;font-family:var(--mono)}
+.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.white{color:var(--text);font-weight:500}
+tr.tr-tot td{border-top:1px solid var(--border2);color:var(--text);font-weight:600;font-family:var(--mono);background:rgba(255,255,255,0.015)}
+/* STATUS */
+.st{display:inline-flex;align-items:center;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:20px;font-weight:500}
+.st.ok{background:var(--green-bg);color:var(--green)}.st.bad{background:var(--red-bg);color:var(--red)}.st.warn{background:var(--amber-bg);color:var(--amber)}
+/* LEGEND */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:9px}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.ld{width:9px;height:9px;border-radius:2px;flex-shrink:0}.ld.ln{width:16px;height:2px;border-radius:1px}
+/* MINI */
+.mini{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
+.mini:last-child{border-bottom:none}
+.ml{font-size:11px;color:var(--text2)}.mv{font-size:11px;font-family:var(--mono);font-weight:500;display:flex;align-items:center;gap:5px}
+/* PACE BARS */
+.pace-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.pace-lbl{font-size:11px;color:var(--text2);min-width:100px}
+.pace-bg{flex:1;height:6px;background:var(--bg3);border-radius:3px;position:relative;overflow:visible}
+.pace-fill{height:6px;border-radius:3px}
+.pace-mark{position:absolute;top:-4px;width:2px;height:14px;background:var(--amber);border-radius:1px}
+.pace-pct{font-size:12px;font-weight:600;font-family:var(--mono);min-width:38px;text-align:right}
+.pace-gap{font-size:10px;color:var(--text3);min-width:70px;text-align:right;font-family:var(--mono)}
+/* FUNNEL */
+.funnel-wrap{display:flex;align-items:flex-end;gap:3px;padding:10px 0}
+.funnel-bar{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px}
+.funnel-fill{width:100%;border-radius:4px}
+.funnel-lbl{font-size:9px;color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:.06em}
+.funnel-val{font-size:11px;font-family:var(--mono);font-weight:500;color:var(--text)}
+.funnel-rate{font-size:10px;color:var(--green)}
+.funnel-arrow{font-size:14px;color:var(--text3);padding-bottom:24px;flex-shrink:0}
+/* HEATMAP */
+.heatmap{display:grid;gap:3px}
+.hm-cell{border-radius:4px;padding:4px 6px;font-size:10px;font-family:var(--mono);text-align:center;cursor:default}
+/* ALERT */
+.alert{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:var(--r);margin-bottom:10px;font-size:12px}
+.alert.warn{background:var(--amber-bg);border:1px solid rgba(240,164,40,0.2);color:var(--amber)}
+.alert.bad{background:var(--red-bg);border:1px solid rgba(240,82,82,0.2);color:var(--red)}
+.alert.ok{background:var(--green-bg);border:1px solid rgba(39,201,126,0.2);color:var(--green)}
+/* TEAM CARDS */
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.team-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:14px}
+.team-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.team-name{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+.team-badges{display:flex;gap:3px}
+/* STR specific */
+.str-gauge-wrap{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.str-gauge-bg{flex:1;height:8px;background:var(--bg3);border-radius:4px}
+.str-gauge-fill{height:8px;border-radius:4px;transition:width .4s}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:2px}
+@media(max-width:1200px){.g6{grid-template-columns:repeat(3,1fr)}.g5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.sidebar{width:190px}.g6,.g5,.g4{grid-template-columns:repeat(2,1fr)}.team-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.sidebar{display:none}.g6,.g5,.g4,.g3,.g2{grid-template-columns:1fr 1fr}.team-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- CONFIG MODAL -->
+<div class="overlay" id="modal">
+<div class="modal">
+  <h3>🔗 Connect Google Sheets</h3>
+  <div class="mhint">
+    Each sheet must be <b>published as CSV</b>: File → Share → Publish to web → Select tab → CSV → Publish → Copy URL.<br>
+    LY and LM are <b>auto-calculated</b> from your RawData history — no extra columns needed.
+  </div>
+  <div class="fg"><label class="flbl">Sheet 1 — RawData <span style="color:var(--red)">*</span></label>
+    <input class="finp-m" id="u1" placeholder="…/pub?gid=0&output=csv"/>
+    <div class="sheet-hint">Columns: date, channel, type, brand, category, orders, revenue, budget_revenue, sessions, marketing_spend, returns, cancellations, new_customers, returning_customers, gross_profit, gp_pct, sale_unit</div>
+  </div>
+  <div class="fg"><label class="flbl">Sheet 2 — InventorySTR (optional)</label>
+    <input class="finp-m" id="u2" placeholder="…/pub?gid=1&output=csv"/>
+    <div class="sheet-hint">Columns: sku, product_name, brand, category, selling_price, gp_pct, ttl_stock, ttl_online_stock, units_sold, stock_value, oos_flag, slow_mover_flag</div>
+  </div>
+  <div class="fg"><label class="flbl">Sheet 3 — Operations daily (optional)</label>
+    <input class="finp-m" id="u3" placeholder="…/pub?gid=2&output=csv"/>
+    <div class="sheet-hint">Columns: date, fulfillment_rate, same_day_ship_pct, avg_fulfillment_hrs, cancellation_rate, return_rate, delivery_sla_hit_pct, warehouse_accuracy_pct, orders_processed…</div>
+  </div>
+  <div class="fg"><label class="flbl">Sheet 4 — Customer Service daily (optional)</label>
+    <input class="finp-m" id="u4" placeholder="…/pub?gid=3&output=csv"/>
+    <div class="sheet-hint">Columns: date, avg_response_hrs, csat_score, nps, complaint_rate, resolution_rate, first_contact_resolution_pct, tickets_opened…</div>
+  </div>
+  <div class="fg"><label class="flbl">Sheet 5 — Product Creation daily (optional)</label>
+    <input class="finp-m" id="u5" placeholder="…/pub?gid=4&output=csv"/>
+    <div class="sheet-hint">Columns: date, new_skus_published, avg_go_live_days, image_pass_rate, content_score_avg, skus_pending_publish…</div>
+  </div>
+  <div class="fg"><label class="flbl">Sheet 6 — Marketing daily (optional)</label>
+    <input class="finp-m" id="u6" placeholder="…/pub?gid=5&output=csv"/>
+    <div class="sheet-hint">Columns: date, channel, campaign, spend, impressions, clicks, orders, revenue, new_customers, roas, cpa, ctr, cvr</div>
+  </div>
+  <div class="fg"><label class="flbl">Dashboard title (optional)</label>
+    <input class="finp-m" id="utitle" placeholder="eCom Management Dashboard"/></div>
+  <div class="btn-row">
+    <button class="btn btn-g" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-p" onclick="saveSync()">Save & Sync All</button>
+  </div>
+</div>
+</div>
+
+<div class="shell">
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-name" id="sb-title">eCom Dashboard</div>
+    <div class="logo-sub">Management View v3</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-gl">Overview</div>
+    <button class="nav-btn active" onclick="showSec('cmd',this)"><div class="ndot" style="background:var(--accent)"></div>Command center</button>
+    <button class="nav-btn" onclick="showSec('perf',this)"><div class="ndot" style="background:var(--teal)"></div>Performance</button>
+    <button class="nav-btn" onclick="showSec('bg',this)"><div class="ndot" style="background:var(--amber)"></div>Budget tracking</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-gl">Analysis</div>
+    <button class="nav-btn" onclick="showSec('channels',this)"><div class="ndot" style="background:var(--green)"></div>Channels</button>
+    <button class="nav-btn" onclick="showSec('brands',this)"><div class="ndot" style="background:var(--pink)"></div>Brands & Categories</button>
+    <button class="nav-btn" onclick="showSec('customer',this)"><div class="ndot" style="background:var(--accent2)"></div>Customer metrics</button>
+    <button class="nav-btn" onclick="showSec('marketing',this)"><div class="ndot" style="background:var(--teal)"></div>Marketing</button>
+    <button class="nav-btn" onclick="showSec('str',this)"><div class="ndot" style="background:var(--pink)"></div>Sell-Through</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-gl">Ops & Teams</div>
+    <button class="nav-btn" onclick="showSec('ops',this)"><div class="ndot" style="background:var(--amber)"></div>Operations</button>
+    <button class="nav-btn" onclick="showSec('cs',this)"><div class="ndot" style="background:var(--pink)"></div>Customer Service</button>
+    <button class="nav-btn" onclick="showSec('pc',this)"><div class="ndot" style="background:var(--accent2)"></div>Product Creation</button>
+    <button class="nav-btn" onclick="showSec('daily',this)"><div class="ndot" style="background:var(--teal)"></div>Daily heatmap</button>
+    <button class="nav-btn" onclick="showSec('teams',this)"><div class="ndot" style="background:var(--text2)"></div>Team KPIs</button>
+  </div>
+  <div class="sidebar-foot" id="sb-foot">Data: —<br>Rows: —<br>Synced: —</div>
+</nav>
+
+<div class="main">
+<div class="topbar">
+  <div>
+    <div class="tb-title" id="tb-title">eCommerce Management Dashboard</div>
+    <div class="tb-meta" id="tb-meta">Connect your Google Sheet to begin</div>
+  </div>
+  <div class="tb-right">
+    <span class="sync-badge" id="sync-badge">Not connected</span>
+    <button class="sync-btn" id="sync-btn" onclick="syncAll()">↻ Sync</button>
+    <button class="cfg-btn" onclick="openModal()">⚙ Config</button>
+    <div class="live-lbl"><div class="live-dot"></div>LIVE</div>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <span class="fl">Period:</span>
+  <div class="period-pills">
+    <button class="pp" onclick="setPeriod('today',this)">Today</button>
+    <button class="pp" onclick="setPeriod('l7d',this)">L7D</button>
+    <button class="pp" onclick="setPeriod('l30d',this)">L30D</button>
+    <button class="pp active" onclick="setPeriod('mtd',this)">MTD</button>
+    <button class="pp" onclick="setPeriod('ytd',this)">YTD</button>
+    <button class="pp" onclick="setPeriod('custom',this)">Custom</button>
+  </div>
+  <div id="date-range" style="display:none;align-items:center;gap:6px">
+    <input type="date" class="finput" id="f-start" onchange="applyCustomDate()"/>
+    <span style="color:var(--text3);font-size:11px">→</span>
+    <input type="date" class="finput" id="f-end" onchange="applyCustomDate()"/>
+  </div>
+  <div class="fsep"></div>
+  <span class="fl">Filter:</span>
+  <select class="fsel" id="f-channel" onchange="applyFilters()"><option value="">All Channels</option></select>
+  <select class="fsel" id="f-type" onchange="applyFilters()"><option value="">All Types</option><option value="CG">CG</option><option value="Non-CG">Non-CG</option></select>
+  <select class="fsel" id="f-brand" onchange="applyFilters()"><option value="">All Brands</option></select>
+  <select class="fsel" id="f-category" onchange="applyFilters()"><option value="">All Categories</option></select>
+  <button class="btn btn-g" style="font-size:11px;padding:5px 10px" onclick="resetFilters()">✕ Reset</button>
+  <div class="fsep"></div>
+  <div class="cmp-bar">
+    <span>vs:</span>
+    <div class="cmp-pill"><div style="width:8px;height:8px;border-radius:2px;background:var(--amber)"></div>LM (auto)</div>
+    <div class="cmp-pill"><div style="width:8px;height:8px;border-radius:2px;background:var(--accent2)"></div>LY (auto)</div>
+    <div class="cmp-pill"><div style="width:8px;height:8px;border-radius:2px;background:var(--text3)"></div>Budget</div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- CMD CENTER -->
+<div id="sec-cmd" class="sec active">
+  <div class="sh">
+    <div class="sh-l"><h2>Command Center</h2><p id="cmd-sub">All-team snapshot · filters applied</p></div>
+    <div class="period-badge" id="cmd-pb">MTD</div>
+  </div>
+  <div id="alerts-row"></div>
+  <div class="kg g6" id="cmd-kpis1"></div>
+  <div class="kg g6" id="cmd-kpis2"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card">
+      <div class="ct">Revenue — Actual vs Budget vs LM vs LY <span class="ct-tag" id="rev-days">— days</span></div>
+      <div class="legend">
+        <div class="li"><div class="ld" style="background:#4f8ef7"></div>Actual</div>
+        <div class="li"><div class="ld ln" style="background:var(--text3)"></div>Budget</div>
+        <div class="li"><div class="ld ln" style="background:var(--amber)"></div>LM</div>
+        <div class="li"><div class="ld ln" style="background:var(--green)"></div>LY</div>
+      </div>
+      <div class="cw" style="height:190px"><canvas id="cmd-revtrend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Revenue mix by channel</div>
+      <div class="cw" style="height:190px"><canvas id="cmd-mix"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">Period comparison — Current vs Budget vs LM vs LY <span class="ct-tag">LM &amp; LY auto-calculated from history</span></div>
+    <div class="tw"><table><thead><tr>
+      <th>Metric</th><th class="nr">Current</th><th class="nr">Budget</th><th class="nr">vs BG</th>
+      <th class="nr">Last Month</th><th class="nr">vs LM</th><th class="nr">Last Year</th><th class="nr">vs LY</th>
+    </tr></thead><tbody id="tbl-cmp-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- PERFORMANCE -->
+<div id="sec-perf" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Performance</h2><p>Revenue, GP, CVR, AOV, Sale Units</p></div><div class="period-badge" id="perf-pb">MTD</div></div>
+  <div class="kg g4" id="perf-kpis"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card">
+      <div class="ct">Conversion funnel</div>
+      <div id="funnel-wrap"></div>
+    </div>
+    <div class="card">
+      <div class="ct">GP% daily trend</div>
+      <div class="cw" style="height:180px"><canvas id="perf-gp-trend"></canvas></div>
+    </div>
+  </div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">CVR by channel — Current vs LM vs LY</div><div class="cw" style="height:190px"><canvas id="perf-cvr"></canvas></div></div>
+    <div class="card"><div class="ct">AOV by channel — Current vs LM vs LY</div><div class="cw" style="height:190px"><canvas id="perf-aov"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Full performance table</div>
+    <div class="tw"><table><thead><tr>
+      <th>Channel</th><th>Type</th>
+      <th class="nr">Revenue</th><th class="nr">vs BG</th><th class="nr">vs LM</th><th class="nr">vs LY</th>
+      <th class="nr">GP</th><th class="nr">GP%</th><th class="nr">Sale Units</th>
+      <th class="nr">CVR</th><th class="nr">AOV</th><th class="nr">Orders</th><th class="nr">Sessions</th>
+      <th class="nr">Return%</th><th class="nr">Cancel%</th>
+    </tr></thead><tbody id="tbl-perf-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- BUDGET -->
+<div id="sec-bg" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Budget Tracking</h2><p>Pacing, gaps, required run rate</p></div><div class="period-badge" id="bg-pb">MTD</div></div>
+  <div class="kg g4" id="bg-kpis"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">Cumulative actual vs budget</div><div class="cw" style="height:200px"><canvas id="bg-cum"></canvas></div></div>
+    <div class="card"><div class="ct">KPI pacing vs time-elapsed benchmark</div><div id="bg-pacing-wrap" style="padding-top:6px"></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Budget gap by channel</div>
+    <div class="tw"><table><thead><tr>
+      <th>Channel</th><th class="nr">Budget</th><th class="nr">Actual</th><th class="nr">Gap</th>
+      <th class="nr">Ach%</th><th class="nr">Pace</th><th class="nr">Days left</th><th class="nr">Req/day</th><th>Status</th>
+    </tr></thead><tbody id="tbl-bg-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- CHANNELS -->
+<div id="sec-channels" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Channel Analysis</h2><p>CG vs Non-CG · period-over-period</p></div><div class="period-badge" id="ch-pb">MTD</div></div>
+  <div class="kg g4" id="ch-kpis"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">Revenue by channel — Current vs LM vs LY</div><div class="cw" style="height:200px"><canvas id="ch-bar"></canvas></div></div>
+    <div class="card"><div class="ct">CG vs Non-CG share trend</div><div class="cw" style="height:200px"><canvas id="ch-type-trend"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Channel detail table</div>
+    <div class="tw"><table><thead><tr>
+      <th>Channel</th><th>Type</th>
+      <th class="nr">Revenue</th><th class="nr">LM</th><th class="nr">vs LM</th><th class="nr">LY</th><th class="nr">vs LY</th>
+      <th class="nr">GP%</th><th class="nr">Sale Units</th><th class="nr">CVR</th><th class="nr">AOV</th><th class="nr">Orders</th>
+    </tr></thead><tbody id="tbl-ch-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- BRANDS -->
+<div id="sec-brands" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Brands &amp; Categories</h2><p>Revenue, GP, units by brand and category</p></div><div class="period-badge" id="br-pb">MTD</div></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">Revenue by brand — Current vs LM vs LY</div><div class="cw" style="height:200px"><canvas id="br-bar"></canvas></div></div>
+    <div class="card"><div class="ct">Revenue by category</div><div class="cw" style="height:200px"><canvas id="cat-bar"></canvas></div></div>
+  </div>
+  <div class="card"><div class="ct">Brand × Channel matrix</div><div class="tw" id="brand-matrix"></div></div>
+  <div class="card">
+    <div class="ct">Brand performance</div>
+    <div class="tw"><table><thead><tr>
+      <th>Brand</th><th class="nr">Revenue</th><th class="nr">vs LM</th><th class="nr">vs LY</th>
+      <th class="nr">GP%</th><th class="nr">Sale Units</th><th class="nr">Orders</th><th class="nr">AOV</th><th class="nr">Share%</th>
+    </tr></thead><tbody id="tbl-brand-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- CUSTOMER -->
+<div id="sec-customer" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Customer Metrics</h2><p>New vs returning, acquisition by channel</p></div><div class="period-badge" id="cust-pb">MTD</div></div>
+  <div class="kg g4" id="cust-kpis"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">New vs returning — daily trend</div><div class="cw" style="height:190px"><canvas id="cust-trend"></canvas></div></div>
+    <div class="card"><div class="ct">New customer acquisition by channel</div><div class="cw" style="height:190px"><canvas id="cust-acq"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Customer metrics by channel</div>
+    <div class="tw"><table><thead><tr>
+      <th>Channel</th><th class="nr">New Customers</th><th class="nr">vs LM</th><th class="nr">vs LY</th>
+      <th class="nr">Returning</th><th class="nr">New%</th><th class="nr">Total</th>
+    </tr></thead><tbody id="tbl-cust-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- MARKETING -->
+<div id="sec-marketing" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Marketing Performance</h2><p>From Marketing daily sheet · ROAS, CPA, spend efficiency</p></div><div class="period-badge" id="mkt-pb">MTD</div></div>
+  <div class="kg g4" id="mkt-kpis"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">Spend vs revenue by channel</div><div class="cw" style="height:190px"><canvas id="mkt-bar"></canvas></div></div>
+    <div class="card"><div class="ct">ROAS by channel</div><div class="cw" style="height:190px"><canvas id="mkt-roas-bar"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Campaign performance table</div>
+    <div class="tw"><table><thead><tr>
+      <th>Campaign</th><th>Channel</th><th class="nr">Spend</th><th class="nr">Revenue</th>
+      <th class="nr">ROAS</th><th class="nr">Orders</th><th class="nr">CPA</th><th class="nr">CTR%</th><th class="nr">CVR%</th>
+    </tr></thead><tbody id="tbl-mkt-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- SELL-THROUGH -->
+<div id="sec-str" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Sell-Through &amp; Inventory</h2><p>STR by SKU · OOS risk · slow movers · stock health</p></div><div class="period-badge" id="str-pb">Current</div></div>
+  <div id="str-alerts"></div>
+  <div class="kg g5" id="str-kpis"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">%Online STR by brand</div><div class="cw" style="height:200px"><canvas id="str-brand-bar"></canvas></div></div>
+    <div class="card"><div class="ct">Stock health breakdown</div><div class="cw" style="height:200px"><canvas id="str-health"></canvas></div></div>
+  </div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card">
+      <div class="ct">OOS risk items <span class="ct-tag" id="oos-cnt">0 SKUs</span></div>
+      <div class="tw"><table><thead><tr>
+        <th>SKU</th><th>Product</th><th>Brand</th><th>Category</th>
+        <th class="nr">Units Sold</th><th class="nr">%Online ST</th><th>Status</th>
+      </tr></thead><tbody id="tbl-oos-body"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="ct">Slow movers — %Online ST below 30% <span class="ct-tag" id="slow-cnt">0 SKUs</span></div>
+      <div class="tw"><table><thead><tr>
+        <th>SKU</th><th>Product</th><th>Brand</th><th class="nr">%Online ST</th>
+        <th class="nr">TTL Stock</th><th class="nr">Stock Value</th><th>Action</th>
+      </tr></thead><tbody id="tbl-slow-body"></tbody></table></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">Full sell-through table <span class="ct-tag" id="str-total">— SKUs</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <select class="fsel" id="sf-brand" onchange="renderSTR()"><option value="">All Brands</option></select>
+      <select class="fsel" id="sf-cat" onchange="renderSTR()"><option value="">All Categories</option></select>
+      <select class="fsel" id="sf-flag" onchange="renderSTR()">
+        <option value="">All SKUs</option><option value="oos">OOS only</option>
+        <option value="slow">Slow movers</option><option value="healthy">Healthy only</option>
+      </select>
+    </div>
+    <div class="tw"><table><thead><tr>
+      <th>SKU</th><th>Product</th><th>Brand</th><th>Cat</th>
+      <th class="nr">TTL Stock</th><th class="nr">Online Stock</th><th class="nr">%Online Stock</th>
+      <th class="nr">Units Sold</th><th class="nr">%Online ST</th>
+      <th class="nr">GP%</th><th class="nr">Sell Price</th><th class="nr">Stock Value</th><th>Health</th>
+    </tr></thead><tbody id="tbl-str-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- DAILY HEATMAP -->
+<div id="sec-daily" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Daily Heatmap</h2><p>Day-of-week patterns · LM overlay</p></div><div class="period-badge" id="daily-pb">MTD</div></div>
+  <div class="kg g4" id="dy-kpis"></div>
+  <div class="card"><div class="ct">Daily revenue vs Budget vs LM vs LY</div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#4f8ef7"></div>Actual</div>
+      <div class="li"><div class="ld ln" style="background:var(--text3)"></div>Budget</div>
+      <div class="li"><div class="ld ln" style="background:var(--amber)"></div>LM equivalent</div>
+      <div class="li"><div class="ld ln" style="background:var(--green)"></div>LY equivalent</div>
+    </div>
+    <div class="cw" style="height:210px"><canvas id="dy-rev"></canvas></div>
+  </div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">Revenue heatmap — day of week avg</div><div id="heatmap-dow" style="padding:6px 0"></div></div>
+    <div class="card"><div class="ct">Orders &amp; CVR daily</div><div class="cw" style="height:180px"><canvas id="dy-ord-cvr"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Daily table</div>
+    <div class="tw"><table><thead><tr>
+      <th>Date</th><th>DOW</th><th class="nr">Revenue</th><th class="nr">Budget</th><th class="nr">vs BG</th>
+      <th class="nr">LM equiv</th><th class="nr">vs LM</th><th class="nr">LY equiv</th><th class="nr">vs LY</th>
+      <th class="nr">GP</th><th class="nr">GP%</th><th class="nr">Sale Units</th>
+      <th class="nr">Orders</th><th class="nr">Sessions</th><th class="nr">CVR</th><th class="nr">AOV</th>
+    </tr></thead><tbody id="tbl-daily-body"></tbody></table></div>
+  </div>
+</div>
+
+
+<!-- OPERATIONS -->
+<div id="sec-ops" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Operations</h2><p>Fulfillment · returns · cancellations · warehouse · SLA — daily view</p></div><div class="period-badge" id="ops-pb">Current</div></div>
+  <div id="ops-alerts"></div>
+  <div class="kg g4" id="ops-kpis1"></div>
+  <div class="kg g4" id="ops-kpis2"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">Fulfillment rate &amp; Same-day ship % — daily</div><div class="cw" style="height:200px"><canvas id="ops-trend1"></canvas></div></div>
+    <div class="card"><div class="ct">Return rate &amp; Cancellation rate — daily</div><div class="cw" style="height:200px"><canvas id="ops-trend2"></canvas></div></div>
+  </div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">Orders processed — daily volume</div><div class="cw" style="height:180px"><canvas id="ops-orders-bar"></canvas></div></div>
+    <div class="card"><div class="ct">Avg fulfillment time &amp; Delivery SLA hit %</div><div class="cw" style="height:180px"><canvas id="ops-sla-trend"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Daily operations table</div>
+    <div class="tw"><table><thead><tr>
+      <th>Date</th><th>DOW</th>
+      <th class="nr">Fulfill Rate</th><th class="nr">Same-Day Ship%</th><th class="nr">Avg Fulfill Hrs</th>
+      <th class="nr">Delivery SLA%</th><th class="nr">Warehouse Acc%</th>
+      <th class="nr">Processed</th><th class="nr">Shipped</th><th class="nr">Pending</th>
+      <th class="nr">Return Rate</th><th class="nr">Cancel Rate</th>
+    </tr></thead><tbody id="tbl-ops-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- CUSTOMER SERVICE -->
+<div id="sec-cs" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Customer Service</h2><p>Response time · CSAT · NPS · resolution — daily view</p></div><div class="period-badge" id="cs-pb">Current</div></div>
+  <div id="cs-alerts"></div>
+  <div class="kg g4" id="cs-kpis1"></div>
+  <div class="kg g4" id="cs-kpis2"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">CSAT score &amp; NPS — daily trend</div><div class="cw" style="height:200px"><canvas id="cs-trend1"></canvas></div></div>
+    <div class="card"><div class="ct">Resolution rate &amp; First contact resolution % — daily</div><div class="cw" style="height:200px"><canvas id="cs-trend2"></canvas></div></div>
+  </div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">Ticket volume — opened vs resolved vs pending</div><div class="cw" style="height:180px"><canvas id="cs-tickets-bar"></canvas></div></div>
+    <div class="card"><div class="ct">Avg response time &amp; Escalation rate — daily</div><div class="cw" style="height:180px"><canvas id="cs-resp-trend"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Daily customer service table</div>
+    <div class="tw"><table><thead><tr>
+      <th>Date</th><th>DOW</th>
+      <th class="nr">Avg Response Hrs</th><th class="nr">CSAT /5</th><th class="nr">NPS</th>
+      <th class="nr">Complaint Rate</th><th class="nr">Resolution Rate</th><th class="nr">FCR%</th>
+      <th class="nr">Opened</th><th class="nr">Resolved</th><th class="nr">Pending</th>
+      <th class="nr">Handle Mins</th><th class="nr">Escalation%</th>
+    </tr></thead><tbody id="tbl-cs-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- PRODUCT CREATION -->
+<div id="sec-pc" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Product Creation</h2><p>SKU launches · go-live speed · content quality · success rate — daily view</p></div><div class="period-badge" id="pc-pb">Current</div></div>
+  <div id="pc-alerts"></div>
+  <div class="kg g4" id="pc-kpis1"></div>
+  <div class="kg g4" id="pc-kpis2"></div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">New SKUs published — daily cumulative</div><div class="cw" style="height:200px"><canvas id="pc-sku-trend"></canvas></div></div>
+    <div class="card"><div class="ct">Content score avg &amp; Image pass rate — daily</div><div class="cw" style="height:200px"><canvas id="pc-quality-trend"></canvas></div></div>
+  </div>
+  <div class="g2" style="display:grid;gap:12px;margin-bottom:13px">
+    <div class="card"><div class="ct">Avg go-live days &amp; SKU success rate 30d</div><div class="cw" style="height:180px"><canvas id="pc-speed-trend"></canvas></div></div>
+    <div class="card"><div class="ct">First 7-day revenue per SKU — daily</div><div class="cw" style="height:180px"><canvas id="pc-rev-trend"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Daily product creation table</div>
+    <div class="tw"><table><thead><tr>
+      <th>Date</th><th>DOW</th>
+      <th class="nr">SKUs Published</th><th class="nr">Go-Live Days</th><th class="nr">Image Pass%</th>
+      <th class="nr">Content Score</th><th class="nr">Pending</th><th class="nr">Rejected</th>
+      <th class="nr">7D Rev/SKU</th><th class="nr">30D Success%</th><th class="nr">Active SKUs</th>
+    </tr></thead><tbody id="tbl-pc-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- TEAM KPIs -->
+<div id="sec-teams" class="sec">
+  <div class="sh"><div class="sh-l"><h2>Team KPIs</h2><p>Calculated from Operations · Customer Service · Product Creation · Marketing sheets</p></div></div>
+  <div id="team-wrap">
+    <div style="color:var(--text3);font-size:12px;padding:30px;text-align:center;font-family:var(--mono)">Connect Ops / CS / Product / Marketing sheets to see team KPIs</div>
+  </div>
+</div>
+
+</div></div></div><!-- /content /main /shell -->
+
+<script>
+// ─── STATE ─────────────────────────────────────────────────────────────────
+const CFG='ecom_v3';
+let RAW=[],STR=[],OPS=[],CS=[],PC=[],MKT=[];
+let FILTERED=[],FILTERED_LM=[],FILTERED_LY=[];
+let chartReg={},PERIOD='mtd',D_START=null,D_END=null;
+
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+function lCfg(){try{return JSON.parse(localStorage.getItem(CFG))||{}}catch{return{}}}
+function sCfg(c){localStorage.setItem(CFG,JSON.stringify(c))}
+function openModal(){const c=lCfg();['u1','u2','u3','u4','u5','u6','utitle'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=c[id]||'';});document.getElementById('modal').classList.add('open')}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+function saveSync(){
+  const url1=document.getElementById('u1').value.trim();
+  if(!url1){alert('RawData URL required');return;}
+  const cfg={u1:url1,u2:document.getElementById('u2').value.trim(),u3:document.getElementById('u3').value.trim(),u4:document.getElementById('u4').value.trim(),u5:document.getElementById('u5').value.trim(),u6:document.getElementById('u6').value.trim(),utitle:document.getElementById('utitle').value.trim()};
+  sCfg(cfg);const t=cfg.utitle||'eCom Dashboard';
+  document.getElementById('tb-title').textContent=t;document.getElementById('sb-title').textContent=t;
+  closeModal();syncAll();
+}
+
+// ─── NAV ───────────────────────────────────────────────────────────────────
+function showSec(id,el){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  el.classList.add('active');
+  if(FILTERED.length)renderAll();
+  else if(id==='str')renderSTR();
+  else if(id==='teams')renderTeams();
+  else if(id==='marketing')renderMarketing();
+  else if(id==='ops')renderOps();
+  else if(id==='cs')renderCS();
+  else if(id==='pc')renderPC();
+}
+
+// ─── DATE UTILS ─────────────────────────────────────────────────────────────
+function normD(d){
+  if(!d)return'';d=String(d).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;
+  const m=d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  try{const p=new Date(d);if(!isNaN(p))return p.toISOString().slice(0,10);}catch(e){}
+  return d;
+}
+const today=()=>new Date().toISOString().slice(0,10);
+const addDays=(s,n)=>{const d=new Date(s);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
+const addMonths=(s,n)=>{const d=new Date(s);d.setMonth(d.getMonth()+n);return d.toISOString().slice(0,10)};
+const addYears=(s,n)=>{const d=new Date(s);d.setFullYear(d.getFullYear()+n);return d.toISOString().slice(0,10)};
+function fmtLbl(d){if(!d)return d;try{const[y,m,day]=d.split('-');const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return`${parseInt(day)} ${mn[parseInt(m)-1]}`;}catch{return d}}
+const dowN=d=>['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(d).getDay()];
+function getPeriodDates(p){
+  const t=today();const[ty,tm]=t.split('-').map(Number);let s,e;
+  if(p==='today'){s=e=t;}
+  else if(p==='l7d'){s=addDays(t,-6);e=t;}
+  else if(p==='l30d'){s=addDays(t,-29);e=t;}
+  else if(p==='mtd'){s=`${ty}-${String(tm).padStart(2,'0')}-01`;e=t;}
+  else if(p==='ytd'){s=`${ty}-01-01`;e=t;}
+  else{s=D_START||`${ty}-${String(tm).padStart(2,'0')}-01`;e=D_END||t;}
+  return{s,e};
+}
+// Shift a date range by -1 month or -1 year
+function shiftRange(s,e,by){
+  if(by==='lm'){return{s:addMonths(s,-1),e:addMonths(e,-1)};}
+  return{s:addYears(s,-1),e:addYears(e,-1)};
+}
+
+// ─── PERIOD PILLS ───────────────────────────────────────────────────────────
+function setPeriod(p,el){
+  document.querySelectorAll('.pp').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');PERIOD=p;
+  const wrap=document.getElementById('date-range');
+  if(p==='custom'){
+    wrap.style.display='flex';
+    const{s,e}=getPeriodDates('mtd');
+    document.getElementById('f-start').value=s;document.getElementById('f-end').value=e;
+    D_START=s;D_END=e;
+  } else wrap.style.display='none';
+  applyFilters();
+}
+function applyCustomDate(){
+  D_START=document.getElementById('f-start').value;
+  D_END=document.getElementById('f-end').value;
+  applyFilters();
+}
+
+// ─── FILTERS ───────────────────────────────────────────────────────────────
+const unique=arr=>[...new Set(arr)].filter(Boolean).sort();
+function fillSel(id,items){const sel=document.getElementById(id);if(!sel)return;const cur=sel.value;while(sel.options.length>1)sel.remove(1);items.forEach(v=>sel.appendChild(new Option(v,v)));sel.value=cur;}
+function populateDropdowns(){
+  fillSel('f-channel',unique(RAW.map(r=>r.channel)));
+  fillSel('f-brand',unique(RAW.map(r=>r.brand)));
+  fillSel('f-category',unique(RAW.map(r=>r.category)));
+}
+function resetFilters(){
+  ['f-channel','f-type','f-brand','f-category'].forEach(id=>{const s=document.getElementById(id);if(s){s.value='';s.classList.remove('af');}});
+  applyFilters();
+}
+function dimFilter(rows,s,e){
+  const ch=(document.getElementById('f-channel')||{}).value||'';
+  const tp=(document.getElementById('f-type')||{}).value||'';
+  const br=(document.getElementById('f-brand')||{}).value||'';
+  const cat=(document.getElementById('f-category')||{}).value||'';
+  return rows.filter(r=>{
+    if(r.date<s||r.date>e)return false;
+    if(ch&&r.channel!==ch)return false;
+    if(tp&&r.type!==tp)return false;
+    if(br&&r.brand!==br)return false;
+    if(cat&&r.category!==cat)return false;
+    return true;
+  });
+}
+function applyFilters(){
+  if(!RAW.length)return;
+  const{s,e}=getPeriodDates(PERIOD);
+  const lm=shiftRange(s,e,'lm'),ly=shiftRange(s,e,'ly');
+  FILTERED=dimFilter(RAW,s,e);
+  FILTERED_LM=dimFilter(RAW,lm.s,lm.e);
+  FILTERED_LY=dimFilter(RAW,ly.s,ly.e);
+  ['f-channel','f-type','f-brand','f-category'].forEach(id=>{const sel=document.getElementById(id);if(sel)sel.classList.toggle('af',!!sel.value);});
+  const af=[document.getElementById('f-channel'),document.getElementById('f-type'),document.getElementById('f-brand'),document.getElementById('f-category')].filter(s=>s&&s.value).map(s=>s.value);
+  const pl={'today':'Today','l7d':'Last 7D','l30d':'Last 30D','mtd':`MTD ${s.slice(0,7)}`,'ytd':`YTD ${s.slice(0,4)}`,'custom':`${s} → ${e}`}[PERIOD]||PERIOD;
+  document.getElementById('tb-meta').textContent=`${pl}${af.length?' · '+af.join(' · '):''}  ·  ${FILTERED.length} rows`;
+  document.querySelectorAll('[id$="-pb"]').forEach(el=>el.textContent=pl);
+  document.getElementById('cmd-sub').textContent=`All-team snapshot · ${pl}${af.length?' · '+af.join(', '):''}`;
+  renderAll();
+}
+
+// ─── SYNC ──────────────────────────────────────────────────────────────────
+async function fetchCSV(url){
+  const proxies=[`https://corsproxy.io/?${encodeURIComponent(url)}`,url,`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`];
+  for(const p of proxies){
+    try{
+      const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),12000);
+      const r=await fetch(p,{signal:ctrl.signal});clearTimeout(t);
+      if(!r.ok)continue;
+      let txt=await r.text();
+      if(p.includes('allorigins.win/get'))try{txt=JSON.parse(txt).contents;}catch(e){}
+      if(txt&&txt.trim().length>10)return txt;
+    }catch(e){console.warn('Proxy failed:',p,e.message)}
+  }
+  throw new Error('All proxies failed — check URL and publication settings');
+}
+function parseCSV(txt){
+  const lines=txt.trim().replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,'').toLowerCase().replace(/[\s\/]+/g,'_'));
+  const numKeys=['orders','revenue','budget_revenue','sessions','marketing_spend','returns','cancellations',
+    'new_customers','returning_customers','gross_profit','gp_pct','sale_unit',
+    'selling_price','ttl_stock','ttl_online_stock','units_sold','stock_value','oos_flag','slow_mover_flag',
+    'fulfillment_rate','same_day_ship_pct','avg_fulfillment_hrs','cancellation_rate','return_rate',
+    'delivery_sla_hit_pct','warehouse_accuracy_pct','orders_processed','orders_shipped','orders_pending','orders_returned','orders_cancelled',
+    'avg_response_hrs','csat_score','nps','complaint_rate','resolution_rate','first_contact_resolution_pct',
+    'tickets_opened','tickets_resolved','tickets_pending','avg_handle_mins','escalation_rate',
+    'new_skus_published','avg_go_live_days','image_pass_rate','content_score_avg','skus_pending_publish',
+    'skus_rejected','first_7day_rev_per_sku','sku_success_rate_30d','active_skus_total',
+    'spend','impressions','clicks','roas','cpa','ctr','cvr'];
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){
+      if(line[i]==='"')inQ=!inQ;
+      else if(line[i]===','&&!inQ){vals.push(cur.trim());cur='';}
+      else cur+=line[i];
+    }
+    vals.push(cur.trim());
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(vals[i]||'').replace(/^"|"$/g,''));
+    if(obj.date)obj.date=normD(obj.date);
+    numKeys.forEach(k=>{if(k in obj)obj[k]=parseFloat((obj[k]||'').replace(/,/g,''))||0;});
+    return obj;
+  }).filter(r=>r.channel||r.sku||r.date);
+}
+async function syncAll(){
+  const cfg=lCfg();if(!cfg.u1){openModal();return;}
+  const btn=document.getElementById('sync-btn'),badge=document.getElementById('sync-badge');
+  btn.classList.add('loading');btn.textContent='↻ Syncing…';
+  badge.className='sync-badge';badge.textContent='Fetching…';
+  const tryFetch=async(url,name)=>{try{if(url){const csv=await fetchCSV(url);return parseCSV(csv);}return[];}catch(e){console.warn(name,'failed:',e.message);return[];}};
+  try{
+    const csv1=await fetchCSV(cfg.u1);
+    RAW=parseCSV(csv1).filter(r=>r.channel&&r.date);
+    if(!RAW.length)throw new Error('No valid rows in RawData — check columns and date format');
+    STR=await tryFetch(cfg.u2,'InventorySTR');
+    OPS=await tryFetch(cfg.u3,'Operations');
+    CS=await tryFetch(cfg.u4,'CustomerService');
+    PC=await tryFetch(cfg.u5,'ProductCreation');
+    MKT=await tryFetch(cfg.u6,'Marketing');
+    populateDropdowns();applyFilters();
+    renderTeams();renderMarketing();if(STR.length)renderSTR();
+    renderOps();renderCS();renderPC();
+    badge.className='sync-badge ok';badge.textContent='✓ '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    const dates=RAW.map(r=>r.date).sort();
+    document.getElementById('sb-foot').innerHTML=`Data: ${dates[0]||'?'} → ${dates[dates.length-1]||'?'}<br>Rows: ${RAW.length.toLocaleString()}<br>Synced: ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`;
+  }catch(e){
+    badge.className='sync-badge err';badge.textContent='✗ Failed';
+    alert('Sync failed: '+e.message+'\n\n1. File → Share → Publish to web\n2. Select the correct sheet tab\n3. Choose CSV format\n4. URL must end with output=csv');
+  }finally{btn.classList.remove('loading');btn.textContent='↻ Sync';}
+}
+
+// ─── AGGREGATION ────────────────────────────────────────────────────────────
+const sum=(arr,k)=>arr.reduce((a,r)=>a+(parseFloat(r[k])||0),0);
+function groupBy(arr,key){const m={};arr.forEach(r=>{const k=r[key]||'?';(m[k]=m[k]||[]).push(r);});return m;}
+function calcM(rows){
+  const revenue=sum(rows,'revenue'),budget=sum(rows,'budget_revenue');
+  const orders=sum(rows,'orders'),sessions=sum(rows,'sessions');
+  const marketing=sum(rows,'marketing_spend'),returns=sum(rows,'returns'),cancels=sum(rows,'cancellations');
+  const new_cust=sum(rows,'new_customers'),ret_cust=sum(rows,'returning_customers');
+  const gross_profit=sum(rows,'gross_profit'),sale_unit=sum(rows,'sale_unit');
+  const gp_pct=revenue?gross_profit/revenue:0;
+  const aov=orders?revenue/orders:0,cvr=sessions?orders/sessions:0;
+  const cir=revenue?marketing/revenue:0,roas=marketing?revenue/marketing:0;
+  const return_rate=orders?returns/orders:0,cancel_rate=orders?cancels/orders:0;
+  const disc_pct=0;
+  const vs_bg=budget?revenue/budget-1:0,bg_ach=budget?revenue/budget:0;
+  return{revenue,budget,orders,sessions,marketing,returns,cancels,new_cust,ret_cust,
+    gross_profit,gp_pct,sale_unit,aov,cvr,cir,roas,return_rate,cancel_rate,disc_pct,vs_bg,bg_ach};
+}
+// Compare current to LM/LY
+const vsM=(cur,cmp,k)=>cmp&&cmp[k]>0?cur[k]/cmp[k]-1:null;
+
+// ─── FORMAT ────────────────────────────────────────────────────────────────
+const fB=v=>{if(v>=1e6)return'฿'+(v/1e6).toFixed(1)+'M';if(v>=1e3)return'฿'+(v/1e3).toFixed(0)+'K';return'฿'+Math.round(v).toLocaleString()};
+const fK=v=>{if(v>=1e6)return(v/1e6).toFixed(2)+'M';if(v>=1e3)return(v/1e3).toFixed(0)+'K';return Math.round(v).toLocaleString()};
+const fP=(v,dp=1)=>(v*100).toFixed(dp)+'%';
+const fD=(v,dp=1)=>(v>=0?'+':'')+(v*100).toFixed(dp)+'%';
+const fDpp=(v,dp=1)=>(v>=0?'+':'')+(v*100).toFixed(dp)+'pp';
+const colV=v=>v>0.005?'green':v<-0.005?'red':'';
+const kbCls=v=>v>0.005?'kb up':v<-0.005?'kb dn':'kb nu';
+const GC='rgba(255,255,255,0.04)',TC='#454a5c';
+const COLORS=['#4f8ef7','#27c97e','#f0a428','#7c5ff7','#e85d8a','#f05252','#00ccb0','#f5d157','#4fc3f7'];
+
+// ─── CHARTS ────────────────────────────────────────────────────────────────
+function mkChart(id,cfg){if(chartReg[id])chartReg[id].destroy();const el=document.getElementById(id);if(!el)return;chartReg[id]=new Chart(el,cfg);}
+const bScales={x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10}},grid:{color:GC}}};
+function spark(id,data,color){
+  const c=document.getElementById(id);if(!c)return;
+  const ctx=c.getContext('2d');const w=c.offsetWidth||100,h=26,p=2;c.width=w;c.height=h;
+  if(!data||data.length<2)return;
+  const mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn||1;
+  ctx.clearRect(0,0,w,h);ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.lineJoin='round';
+  data.forEach((v,i)=>{const x=p+(i/(data.length-1))*(w-p*2),y=h-p-((v-mn)/rng)*(h-p*2);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.stroke();
+}
+
+// ─── RENDER ALL ──────────────────────────────────────────────────────────
+function renderAll(){
+  if(!FILTERED.length)return;
+  renderCmd();renderPerf();renderBudget();renderChannels();renderBrands();renderCustomer();renderMarketing();renderDaily();renderOps();renderCS();renderPC();
+}
+
+// ─── COMMAND CENTER ──────────────────────────────────────────────────────
+function renderCmd(){
+  const m=calcM(FILTERED),lm=calcM(FILTERED_LM),ly=calcM(FILTERED_LY);
+  const byDate=groupBy(FILTERED,'date');const dates=Object.keys(byDate).sort();
+  const dRev=dates.map(d=>sum(byDate[d],'revenue'));
+
+  // Alerts
+  const alerts=[];
+  if(m.vs_bg<-0.05)alerts.push({t:'bad',icon:'⚠️',msg:`Revenue ${fD(m.vs_bg)} vs budget — behind by ${fB(Math.abs(m.revenue-m.budget))}`});
+  if(m.return_rate>0.05)alerts.push({t:'warn',icon:'↩️',msg:`Return rate ${fP(m.return_rate)} is elevated — review product/fulfilment`});
+  if(m.vs_bg>0.05)alerts.push({t:'ok',icon:'✓',msg:`Revenue ahead of budget by ${fD(m.vs_bg)} — ${fB(m.revenue-m.budget)} above target`});
+  if(m.roas<3)alerts.push({t:'warn',icon:'📢',msg:`ROAS ${m.roas.toFixed(1)}x is below 3x threshold — review marketing spend`});
+  document.getElementById('alerts-row').innerHTML=alerts.slice(0,3).map(a=>`<div class="alert ${a.t}"><span style="font-size:14px;flex-shrink:0">${a.icon}</span><span>${a.msg}</span></div>`).join('');
+
+  // LM/LY vs ratios
+  const vlm_r=lm.revenue?m.revenue/lm.revenue-1:null;
+  const vly_r=ly.revenue?m.revenue/ly.revenue-1:null;
+  const vlm_gp=lm.gross_profit?m.gross_profit/lm.gross_profit-1:null;
+  const vly_gp=ly.gross_profit?m.gross_profit/ly.gross_profit-1:null;
+  const vlm_ord=lm.orders?m.orders/lm.orders-1:null;
+  const vly_ord=ly.orders?m.orders/ly.orders-1:null;
+  const vlm_sess=lm.sessions?m.sessions/lm.sessions-1:null;
+  const vly_sess=ly.sessions?m.sessions/ly.sessions-1:null;
+
+  document.getElementById('cmd-kpis1').innerHTML=`
+    <div class="kc hi"><div class="kl">Net Revenue</div><div class="kv">${fB(m.revenue)}</div>
+      <div class="kbadges"><span class="${kbCls(m.vs_bg)} kb">BG ${fD(m.vs_bg)}</span>${vlm_r!==null?`<span class="${kbCls(vlm_r)} kb">LM ${fD(vlm_r)}</span>`:''} ${vly_r!==null?`<span class="${kbCls(vly_r)} kb">LY ${fD(vly_r)}</span>`:''}</div>
+      <canvas class="ksp" id="sp1"></canvas></div>
+    <div class="kc"><div class="kl">Gross Profit</div><div class="kv">${fB(m.gross_profit)}</div>
+      <div class="kbadges"><span class="kb nu">GP% ${fP(m.gp_pct)}</span>${vlm_gp!==null?`<span class="${kbCls(vlm_gp)} kb">LM ${fD(vlm_gp)}</span>`:''} ${vly_gp!==null?`<span class="${kbCls(vly_gp)} kb">LY ${fD(vly_gp)}</span>`:''}</div>
+      <canvas class="ksp" id="sp2"></canvas></div>
+    <div class="kc"><div class="kl">Sale Units</div><div class="kv">${fK(m.sale_unit)}</div>
+      <div class="kbadges"><span class="kb nu">฿${(m.revenue/m.sale_unit).toFixed(0)}/unit</span></div>
+      <canvas class="ksp" id="sp5"></canvas></div>
+    <div class="kc"><div class="kl">Total Orders</div><div class="kv">${fK(m.orders)}</div>
+      <div class="kbadges">${vlm_ord!==null?`<span class="${kbCls(vlm_ord)} kb">LM ${fD(vlm_ord)}</span>`:''} ${vly_ord!==null?`<span class="${kbCls(vly_ord)} kb">LY ${fD(vly_ord)}</span>`:''}</div>
+      <canvas class="ksp" id="sp3"></canvas></div>
+    <div class="kc"><div class="kl">Sessions</div><div class="kv">${fK(m.sessions)}</div>
+      <div class="kbadges">${vlm_sess!==null?`<span class="${kbCls(vlm_sess)} kb">LM ${fD(vlm_sess)}</span>`:''} ${vly_sess!==null?`<span class="${kbCls(vly_sess)} kb">LY ${fD(vly_sess)}</span>`:''}</div>
+      <canvas class="ksp" id="sp4"></canvas></div>
+    <div class="kc ${m.roas>=4?'hi-g':m.roas>=2?'hi-a':'hi-r'}"><div class="kl">ROAS</div><div class="kv sm">${m.roas.toFixed(2)}x</div>
+      <div class="kbadges"><span class="${m.roas>=4?'kb up':m.roas>=2?'kb wa':'kb dn'} kb">${m.roas>=4?'Strong':m.roas>=2?'Watch':'Poor'}</span></div></div>
+  `;
+  document.getElementById('cmd-kpis2').innerHTML=`
+    <div class="kc"><div class="kl">CVR</div><div class="kv sm">${fP(m.cvr)}</div>
+      <div class="kbadges">${lm.cvr?`<span class="${kbCls(m.cvr-lm.cvr)} kb">LM ${fDpp(m.cvr-lm.cvr)}</span>`:''} ${ly.cvr?`<span class="${kbCls(m.cvr-ly.cvr)} kb">LY ${fDpp(m.cvr-ly.cvr)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">AOV</div><div class="kv sm">${fB(m.aov)}</div>
+      <div class="kbadges">${lm.aov?`<span class="${kbCls(m.aov/lm.aov-1)} kb">LM ${fD(m.aov/lm.aov-1)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">GP%</div><div class="kv sm">${fP(m.gp_pct)}</div>
+      <div class="kbadges">${lm.gp_pct?`<span class="${kbCls(m.gp_pct-lm.gp_pct)} kb">LM ${fDpp(m.gp_pct-lm.gp_pct)}</span>`:''} ${ly.gp_pct?`<span class="${kbCls(m.gp_pct-ly.gp_pct)} kb">LY ${fDpp(m.gp_pct-ly.gp_pct)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">Mktg Spend</div><div class="kv sm">${fB(m.marketing)}</div>
+      <div class="kbadges"><span class="kb nu">${fP(m.cir)} CIR</span></div></div>
+    <div class="kc"><div class="kl">Return Rate</div><div class="kv sm ${m.return_rate>0.05?'red':''}">${fP(m.return_rate)}</div>
+      <div class="kbadges">${lm.return_rate?`<span class="${kbCls(lm.return_rate-m.return_rate)} kb">LM ${fDpp(m.return_rate-lm.return_rate)}</span>`:''}</div></div>
+    <div class="kc ${m.bg_ach>=0.3?'hi-g':'hi-r'}"><div class="kl">BG Achievement</div><div class="kv sm ${m.bg_ach>=0.3?'green':'red'}">${fP(m.bg_ach)}</div>
+      <div class="kbadges"><span class="${m.bg_ach>=0.3?'kb up':'kb dn'} kb">${m.bg_ach>=0.3?'On track':'Behind'}</span></div></div>
+  `;
+
+  setTimeout(()=>{
+    spark('sp1',dRev,'#4f8ef7');
+    spark('sp2',dates.map(d=>sum(byDate[d],'gross_profit')),'#27c97e');
+    spark('sp5',dates.map(d=>sum(byDate[d],'sale_unit')),'#00ccb0');
+    spark('sp3',dates.map(d=>sum(byDate[d],'orders')),'#4f8ef7');
+    spark('sp4',dates.map(d=>sum(byDate[d],'sessions')),'#27c97e');
+  },50);
+
+  // Revenue trend with auto LM/LY
+  const byDateLM=groupBy(FILTERED_LM,'date'),byDateLY=groupBy(FILTERED_LY,'date');
+  const dBg=dates.map(d=>sum(byDate[d],'budget_revenue'));
+  const dLM=dates.map(d=>{const ld=addMonths(d,-1);const lr=byDateLM[ld];return lr?sum(lr,'revenue'):null;});
+  const dLY=dates.map(d=>{const ld=addYears(d,-1);const lr=byDateLY[ld];return lr?sum(lr,'revenue'):null;});
+  document.getElementById('rev-days').textContent=`${dates.length} days`;
+  mkChart('cmd-revtrend',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Actual',data:dRev,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.07)',fill:true,tension:0.35,borderWidth:2,pointRadius:2.5},
+    {label:'Budget',data:dBg,borderColor:TC,borderDash:[4,3],fill:false,tension:0.35,borderWidth:1.5,pointRadius:0},
+    {label:'LM',data:dLM,borderColor:COLORS[2],borderDash:[3,2],fill:false,tension:0.35,borderWidth:1.5,pointRadius:0,spanGaps:true},
+    {label:'LY',data:dLY,borderColor:COLORS[1],fill:false,tension:0.35,borderWidth:1.5,pointRadius:0,spanGaps:true}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+    x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},
+    y:{ticks:{color:TC,font:{size:10},callback:v=>fB(v)},grid:{color:GC}}
+  }}});
+
+  // Mix donut
+  const byCh=groupBy(FILTERED,'channel');
+  const chN=Object.keys(byCh).sort((a,b)=>sum(byCh[b],'revenue')-sum(byCh[a],'revenue'));
+  mkChart('cmd-mix',{type:'doughnut',data:{labels:chN,datasets:[{data:chN.map(c=>sum(byCh[c],'revenue')),backgroundColor:chN.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{color:TC,font:{size:10},boxWidth:10,padding:6}}}}});
+
+  // Comparison table
+  const tbody=document.getElementById('tbl-cmp-body');tbody.innerHTML='';
+  const metrics=[
+    {lbl:'Revenue',k:'revenue',fmt:fB,lb:false},
+    {lbl:'Gross Profit',k:'gross_profit',fmt:fB,lb:false},
+    {lbl:'GP%',k:'gp_pct',fmt:v=>fP(v),lb:false,pp:true},
+    {lbl:'Sale Units',k:'sale_unit',fmt:fK,lb:false},
+    {lbl:'Orders',k:'orders',fmt:fK,lb:false},
+    {lbl:'Sessions',k:'sessions',fmt:fK,lb:false},
+    {lbl:'CVR',k:'cvr',fmt:v=>fP(v),lb:false,pp:true},
+    {lbl:'AOV',k:'aov',fmt:fB,lb:false},
+    {lbl:'ROAS',k:'roas',fmt:v=>v.toFixed(1)+'x',lb:false},
+    {lbl:'Marketing Spend',k:'marketing',fmt:fB,lb:true},
+    {lbl:'Return Rate',k:'return_rate',fmt:v=>fP(v),lb:true,pp:true},
+    {lbl:'Cancel Rate',k:'cancel_rate',fmt:v=>fP(v),lb:true,pp:true},
+  ];
+  metrics.forEach(({lbl,k,fmt,lb,pp})=>{
+    const cur=m[k],bg=k==='revenue'?m.budget:k==='sessions'?null:null;
+    const vbg=bg&&bg>0?cur/bg-1:null;
+    const vlm=lm[k]>0?(pp?cur-lm[k]:cur/lm[k]-1):null;
+    const vly=ly[k]>0?(pp?cur-ly[k]:cur/ly[k]-1):null;
+    const vc=v=>lb?colV(-v):colV(v);
+    const kc=v=>lb?kbCls(-v):kbCls(v);
+    tbody.insertAdjacentHTML('beforeend',`<tr>
+      <td class="white">${lbl}</td>
+      <td class="nr white">${fmt(cur)}</td>
+      <td class="nr">${bg?fmt(bg):'—'}</td>
+      <td class="nr ${vbg!==null?vc(vbg):''}">${vbg!==null?fD(vbg):'—'}</td>
+      <td class="nr">${lm[k]?fmt(lm[k]):'—'}</td>
+      <td class="nr ${vlm!==null?kc(vlm):''}">${vlm!==null?(pp?fDpp(vlm):fD(vlm)):'—'}</td>
+      <td class="nr">${ly[k]?fmt(ly[k]):'—'}</td>
+      <td class="nr ${vly!==null?kc(vly):''}">${vly!==null?(pp?fDpp(vly):fD(vly)):'—'}</td>
+    </tr>`);
+  });
+}
+
+// ─── PERFORMANCE ─────────────────────────────────────────────────────────
+function renderPerf(){
+  const m=calcM(FILTERED),lm=calcM(FILTERED_LM),ly=calcM(FILTERED_LY);
+  document.getElementById('perf-kpis').innerHTML=`
+    <div class="kc hi"><div class="kl">Revenue</div><div class="kv sm">${fB(m.revenue)}</div>
+      <div class="kbadges"><span class="${kbCls(m.vs_bg)} kb">BG ${fD(m.vs_bg)}</span>${lm.revenue?`<span class="${kbCls(m.revenue/lm.revenue-1)} kb">LM ${fD(m.revenue/lm.revenue-1)}</span>`:''} ${ly.revenue?`<span class="${kbCls(m.revenue/ly.revenue-1)} kb">LY ${fD(m.revenue/ly.revenue-1)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">Gross Profit</div><div class="kv sm">${fB(m.gross_profit)}</div>
+      <div class="kbadges"><span class="kb nu">GP% ${fP(m.gp_pct)}</span>${lm.gp_pct?`<span class="${kbCls(m.gp_pct-lm.gp_pct)} kb">LM ${fDpp(m.gp_pct-lm.gp_pct)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">Sale Units</div><div class="kv sm">${fK(m.sale_unit)}</div>
+      <div class="kbadges"><span class="kb nu">฿${m.sale_unit?Math.round(m.revenue/m.sale_unit).toLocaleString():0}/unit</span></div></div>
+    <div class="kc"><div class="kl">CVR</div><div class="kv sm">${fP(m.cvr)}</div>
+      <div class="kbadges">${lm.cvr?`<span class="${kbCls(m.cvr-lm.cvr)} kb">LM ${fDpp(m.cvr-lm.cvr)}</span>`:''} ${ly.cvr?`<span class="${kbCls(m.cvr-ly.cvr)} kb">LY ${fDpp(m.cvr-ly.cvr)}</span>`:''}</div></div>
+  `;
+
+  // Funnel
+  const funnel=[{lbl:'Sessions',val:m.sessions,c:'#4f8ef7'},{lbl:'Product Views',val:m.sessions*2.6,c:'#7c5ff7'},{lbl:'Add to Cart',val:m.sessions*0.087,c:'#00ccb0'},{lbl:'Checkout',val:m.orders*1.12,c:'#f0a428'},{lbl:'Orders',val:m.orders,c:'#27c97e'}];
+  const maxV=funnel[0].val||1;
+  document.getElementById('funnel-wrap').innerHTML=`<div class="funnel-wrap">${funnel.map((f,i)=>{
+    const h=Math.max(20,Math.round(f.val/maxV*120));const rate=i>0?fP(f.val/funnel[i-1].val):'100%';
+    return`${i>0?'<div class="funnel-arrow">→</div>':''}<div class="funnel-bar"><div class="funnel-val">${fK(f.val)}</div><div class="funnel-rate">${rate}</div><div class="funnel-fill" style="height:${h}px;background:${f.c}"></div><div class="funnel-lbl">${f.lbl}</div></div>`;
+  }).join('')}</div>`;
+
+  // GP% trend
+  const bd=groupBy(FILTERED,'date'),dates=Object.keys(bd).sort();
+  mkChart('perf-gp-trend',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[{data:dates.map(d=>{const r=bd[d];const rev=sum(r,'revenue'),gp=sum(r,'gross_profit');return rev?gp/rev*100:0;}),borderColor:'#27c97e',backgroundColor:'rgba(39,201,126,0.07)',fill:true,tension:0.4,borderWidth:2,pointRadius:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(1)+'%'},grid:{color:GC}}}}});
+
+  // CVR & AOV by channel
+  const byCh=groupBy(FILTERED,'channel'),byChLM=groupBy(FILTERED_LM,'channel'),byChLY=groupBy(FILTERED_LY,'channel');
+  const chN=Object.keys(byCh).sort((a,b)=>sum(byCh[b],'revenue')-sum(byCh[a],'revenue'));
+  mkChart('perf-cvr',{type:'bar',data:{labels:chN,datasets:[
+    {label:'Current',data:chN.map(c=>(calcM(byCh[c]).cvr*100).toFixed(2)),backgroundColor:'#4f8ef7',borderRadius:4,borderWidth:0},
+    {label:'LM',data:chN.map(c=>(calcM(byChLM[c]||[]).cvr*100).toFixed(2)),backgroundColor:COLORS[2]+'88',borderRadius:4,borderWidth:0},
+    {label:'LY',data:chN.map(c=>(calcM(byChLY[c]||[]).cvr*100).toFixed(2)),backgroundColor:COLORS[1]+'88',borderRadius:4,borderWidth:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>v+'%'},grid:{color:GC}}}}});
+  mkChart('perf-aov',{type:'bar',data:{labels:chN,datasets:[
+    {label:'Current',data:chN.map(c=>Math.round(calcM(byCh[c]).aov)),backgroundColor:'#7c5ff7',borderRadius:4,borderWidth:0},
+    {label:'LM',data:chN.map(c=>Math.round(calcM(byChLM[c]||[]).aov)),backgroundColor:COLORS[2]+'88',borderRadius:4,borderWidth:0},
+    {label:'LY',data:chN.map(c=>Math.round(calcM(byChLY[c]||[]).aov)),backgroundColor:COLORS[1]+'88',borderRadius:4,borderWidth:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>fB(v)},grid:{color:GC}}}}});
+
+  // Full table
+  const tbody=document.getElementById('tbl-perf-body');tbody.innerHTML='';
+  chN.forEach((ch,i)=>{
+    const cm=calcM(byCh[ch]),clm=calcM(byChLM[ch]||[]),cly=calcM(byChLY[ch]||[]);
+    const vlm=clm.revenue?cm.revenue/clm.revenue-1:null,vly=cly.revenue?cm.revenue/cly.revenue-1:null;
+    const type=(byCh[ch][0]||{}).type||'';
+    tbody.insertAdjacentHTML('beforeend',`<tr>
+      <td class="white" style="color:${COLORS[i%COLORS.length]}">${ch}</td>
+      <td style="font-size:10px;color:${type==='CG'?'var(--accent)':'var(--amber)'}">${type}</td>
+      <td class="nr white">${fB(cm.revenue)}</td>
+      <td class="nr ${colV(cm.vs_bg)}">${fD(cm.vs_bg)}</td>
+      <td class="nr ${vlm!==null?colV(vlm):''}">${vlm!==null?fD(vlm):'—'}</td>
+      <td class="nr ${vly!==null?colV(vly):''}">${vly!==null?fD(vly):'—'}</td>
+      <td class="nr">${fB(cm.gross_profit)}</td>
+      <td class="nr ${cm.gp_pct>0.28?'green':'red'}">${fP(cm.gp_pct)}</td>
+      <td class="nr">${fK(cm.sale_unit)}</td>
+      <td class="nr ${cm.cvr>0.03?'green':'red'}">${fP(cm.cvr)}</td>
+      <td class="nr">${fB(cm.aov)}</td>
+      <td class="nr">${fK(cm.orders)}</td>
+      <td class="nr">${fK(cm.sessions)}</td>
+      <td class="nr ${cm.return_rate>0.05?'red':''}">${fP(cm.return_rate)}</td>
+      <td class="nr ${cm.cancel_rate>0.05?'red':''}">${fP(cm.cancel_rate)}</td>
+    </tr>`);
+  });
+  const tm=calcM(FILTERED),tlm=calcM(FILTERED_LM),tly=calcM(FILTERED_LY);
+  const tvlm=tlm.revenue?tm.revenue/tlm.revenue-1:null,tvly=tly.revenue?tm.revenue/tly.revenue-1:null;
+  tbody.insertAdjacentHTML('beforeend',`<tr class="tr-tot"><td>Total</td><td></td>
+    <td class="nr">${fB(tm.revenue)}</td><td class="nr ${colV(tm.vs_bg)}">${fD(tm.vs_bg)}</td>
+    <td class="nr ${tvlm!==null?colV(tvlm):''}">${tvlm!==null?fD(tvlm):'—'}</td>
+    <td class="nr ${tvly!==null?colV(tvly):''}">${tvly!==null?fD(tvly):'—'}</td>
+    <td class="nr">${fB(tm.gross_profit)}</td><td class="nr">${fP(tm.gp_pct)}</td><td class="nr">${fK(tm.sale_unit)}</td>
+    <td class="nr">${fP(tm.cvr)}</td><td class="nr">${fB(tm.aov)}</td><td class="nr">${fK(tm.orders)}</td><td class="nr">${fK(tm.sessions)}</td>
+    <td class="nr">${fP(tm.return_rate)}</td><td class="nr">${fP(tm.cancel_rate)}</td>
+  </tr>`);
+}
+
+// ─── BUDGET ───────────────────────────────────────────────────────────────
+function renderBudget(){
+  const m=calcM(FILTERED);
+  const bd=groupBy(FILTERED,'date'),dates=Object.keys(bd).sort();
+  const dRev=dates.map(d=>sum(bd[d],'revenue')),dBg=dates.map(d=>sum(bd[d],'budget_revenue'));
+  let cR=0,cB=0,cRA=[],cBA=[];dates.forEach((_,i)=>{cR+=dRev[i];cB+=dBg[i];cRA.push(cR);cBA.push(cB);});
+  const totalBg=sum(FILTERED,'budget_revenue'),gap=m.revenue-totalBg;
+  const dE=dates.length,dL=Math.max(30-dE,1),pace=dE/30,reqDay=gap<0?Math.abs(gap)/dL:0;
+
+  document.getElementById('bg-kpis').innerHTML=`
+    <div class="kc ${m.bg_ach>=pace?'hi-g':'hi-r'}"><div class="kl">BG Achievement</div><div class="kv ${m.bg_ach>=pace?'green':'red'}">${fP(m.bg_ach)}</div>
+      <div class="kbadges"><span class="${m.bg_ach>=pace?'kb up':'kb dn'} kb">${m.bg_ach>=pace?'Ahead of pace':'Behind pace'}</span></div></div>
+    <div class="kc"><div class="kl">Revenue gap</div><div class="kv sm ${gap>=0?'green':'red'}">${gap>=0?'+':''}${fB(Math.abs(gap))}</div>
+      <div class="kbadges"><span class="${gap>=0?'kb up':'kb dn'} kb">${gap>=0?'Above BG':'Below BG'}</span></div></div>
+    <div class="kc"><div class="kl">Pace benchmark</div><div class="kv sm">${fP(pace)}</div>
+      <div class="kbadges"><span class="kb nu">${dE}/30 days elapsed</span></div></div>
+    <div class="kc"><div class="kl">Required /day</div><div class="kv sm ${reqDay>0?'red':'green'}">${reqDay>0?fB(reqDay)+'/day':'✓ Met'}</div>
+      <div class="kbadges"><span class="${reqDay>0?'kb dn':'kb up'} kb">${reqDay>0?'To close gap':'Budget met'}</span></div></div>
+  `;
+  mkChart('bg-cum',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Actual',data:cRA,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.07)',fill:true,tension:0.35,borderWidth:2,pointRadius:2},
+    {label:'Budget',data:cBA,borderColor:TC,borderDash:[5,3],fill:false,tension:0.35,borderWidth:1.5,pointRadius:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>fB(v)},grid:{color:GC}}}}});
+
+  const paceMs=[{lbl:'Revenue',cur:m.revenue,bg:totalBg},{lbl:'Sessions',cur:m.sessions,bg:sum(FILTERED,'budget_revenue')/500}];
+  document.getElementById('bg-pacing-wrap').innerHTML=paceMs.filter(x=>x.bg>0).map(({lbl,cur,bg})=>{
+    const pct=Math.min(cur/bg,1.5),color=pct>=pace?'var(--green)':'var(--red)';
+    return`<div class="pace-row"><div class="pace-lbl">${lbl}</div><div class="pace-bg"><div class="pace-fill" style="width:${Math.min(pct*100,100)}%;background:${color}"></div><div class="pace-mark" style="left:${pace*100}%"></div></div><div class="pace-pct" style="color:${color}">${fP(Math.min(pct,1))}</div><div class="pace-gap">${pct>=1?'+':''}${fD(cur/bg-1)}</div></div>`;
+  }).join('');
+
+  const byCh=groupBy(FILTERED,'channel'),chN=Object.keys(byCh).sort((a,b)=>sum(byCh[b],'revenue')-sum(byCh[a],'revenue'));
+  const tbody=document.getElementById('tbl-bg-body');tbody.innerHTML='';
+  chN.forEach(ch=>{
+    const cm=calcM(byCh[ch]),chGap=cm.revenue-cm.budget,chReq=chGap<0?Math.abs(chGap)/dL:0;
+    const ach=cm.bg_ach,status=ach>=pace?'<span class="st ok">On track</span>':ach>=pace*0.85?'<span class="st warn">At risk</span>':'<span class="st bad">Behind</span>';
+    tbody.insertAdjacentHTML('beforeend',`<tr>
+      <td class="white">${ch}</td><td class="nr">${fB(cm.budget)}</td><td class="nr white">${fB(cm.revenue)}</td>
+      <td class="nr ${colV(chGap/Math.max(cm.budget,1))}">${chGap>=0?'+':''}${fB(Math.abs(chGap))}</td>
+      <td class="nr ${ach>=pace?'green':'red'}">${fP(ach)}</td><td class="nr amber">${fP(pace)}</td>
+      <td class="nr">${dL}</td><td class="nr ${chReq>0?'red':'green'}">${chReq>0?fB(chReq)+'/day':'—'}</td><td>${status}</td>
+    </tr>`);
+  });
+}
+
+// ─── CHANNELS ────────────────────────────────────────────────────────────
+function renderChannels(){
+  const byCh=groupBy(FILTERED,'channel'),byChLM=groupBy(FILTERED_LM,'channel'),byChLY=groupBy(FILTERED_LY,'channel');
+  const chN=Object.keys(byCh).sort((a,b)=>sum(byCh[b],'revenue')-sum(byCh[a],'revenue'));
+
+  document.getElementById('ch-kpis').innerHTML=chN.slice(0,4).map((ch,i)=>{
+    const cm=calcM(byCh[ch]),clm=calcM(byChLM[ch]||[]),cly=calcM(byChLY[ch]||[]);
+    const vlm=clm.revenue?cm.revenue/clm.revenue-1:null,vly=cly.revenue?cm.revenue/cly.revenue-1:null;
+    return`<div class="kc"><div class="kl" style="color:${COLORS[i]}">${ch}</div><div class="kv sm">${fB(cm.revenue)}</div>
+      <div class="kbadges"><span class="${kbCls(cm.vs_bg)} kb">BG ${fD(cm.vs_bg)}</span>${vlm!==null?`<span class="${kbCls(vlm)} kb">LM ${fD(vlm)}</span>`:''} ${vly!==null?`<span class="${kbCls(vly)} kb">LY ${fD(vly)}</span>`:''}</div></div>`;
+  }).join('');
+
+  mkChart('ch-bar',{type:'bar',data:{labels:chN,datasets:[
+    {label:'Current',data:chN.map(c=>sum(byCh[c],'revenue')),backgroundColor:chN.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:5,borderWidth:0},
+    {label:'LM',data:chN.map(c=>sum(byChLM[c]||[],'revenue')),backgroundColor:'rgba(255,255,255,0.08)',borderRadius:5,borderWidth:0},
+    {label:'LY',data:chN.map(c=>sum(byChLY[c]||[],'revenue')),backgroundColor:'rgba(255,255,255,0.04)',borderRadius:5,borderWidth:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>fB(v)},grid:{color:GC}}}}});
+
+  const bd=groupBy(FILTERED,'date'),dates=Object.keys(bd).sort();
+  const cgShare=dates.map(d=>{const rows=bd[d];const cg=rows.filter(r=>r.type==='CG'),total=sum(rows,'revenue');return total?sum(cg,'revenue')/total*100:0;});
+  mkChart('ch-type-trend',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'CG%',data:cgShare,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:2},
+    {data:cgShare.map(()=>50),borderColor:TC,borderDash:[4,3],fill:false,borderWidth:1,pointRadius:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>v+'%'},grid:{color:GC},min:0,max:100}}}});
+
+  const tbody=document.getElementById('tbl-ch-body');tbody.innerHTML='';
+  chN.forEach((ch,i)=>{
+    const cm=calcM(byCh[ch]),clm=calcM(byChLM[ch]||[]),cly=calcM(byChLY[ch]||[]);
+    const vlm=clm.revenue?cm.revenue/clm.revenue-1:null,vly=cly.revenue?cm.revenue/cly.revenue-1:null;
+    const type=(byCh[ch][0]||{}).type||'';
+    tbody.insertAdjacentHTML('beforeend',`<tr>
+      <td class="white" style="color:${COLORS[i%COLORS.length]}">${ch}</td>
+      <td style="font-size:10px;color:${type==='CG'?'var(--accent)':'var(--amber)'}">${type}</td>
+      <td class="nr white">${fB(cm.revenue)}</td>
+      <td class="nr">${clm.revenue?fB(clm.revenue):'—'}</td>
+      <td class="nr ${vlm!==null?colV(vlm):''}">${vlm!==null?fD(vlm):'—'}</td>
+      <td class="nr">${cly.revenue?fB(cly.revenue):'—'}</td>
+      <td class="nr ${vly!==null?colV(vly):''}">${vly!==null?fD(vly):'—'}</td>
+      <td class="nr ${cm.gp_pct>0.28?'green':'red'}">${fP(cm.gp_pct)}</td>
+      <td class="nr">${fK(cm.sale_unit)}</td>
+      <td class="nr">${fP(cm.cvr)}</td><td class="nr">${fB(cm.aov)}</td><td class="nr">${fK(cm.orders)}</td>
+    </tr>`);
+  });
+  const tm=calcM(FILTERED),tlm=calcM(FILTERED_LM),tly=calcM(FILTERED_LY);
+  const tvlm=tlm.revenue?tm.revenue/tlm.revenue-1:null,tvly=tly.revenue?tm.revenue/tly.revenue-1:null;
+  tbody.insertAdjacentHTML('beforeend',`<tr class="tr-tot"><td>Total</td><td></td><td class="nr">${fB(tm.revenue)}</td>
+    <td class="nr">${tlm.revenue?fB(tlm.revenue):'—'}</td><td class="nr ${tvlm!==null?colV(tvlm):''}">${tvlm!==null?fD(tvlm):'—'}</td>
+    <td class="nr">${tly.revenue?fB(tly.revenue):'—'}</td><td class="nr ${tvly!==null?colV(tvly):''}">${tvly!==null?fD(tvly):'—'}</td>
+    <td class="nr">${fP(tm.gp_pct)}</td><td class="nr">${fK(tm.sale_unit)}</td><td class="nr">${fP(tm.cvr)}</td><td class="nr">${fB(tm.aov)}</td><td class="nr">${fK(tm.orders)}</td>
+  </tr>`);
+}
+
+// ─── BRANDS ──────────────────────────────────────────────────────────────
+function renderBrands(){
+  const byBr=groupBy(FILTERED,'brand'),byBrLM=groupBy(FILTERED_LM,'brand'),byBrLY=groupBy(FILTERED_LY,'brand');
+  const byCat=groupBy(FILTERED,'category'),byCh=groupBy(FILTERED,'channel');
+  const brN=Object.keys(byBr).sort((a,b)=>sum(byBr[b],'revenue')-sum(byBr[a],'revenue'));
+  const catN=Object.keys(byCat).sort((a,b)=>sum(byCat[b],'revenue')-sum(byCat[a],'revenue'));
+  const chN=Object.keys(byCh).sort((a,b)=>sum(byCh[b],'revenue')-sum(byCh[a],'revenue'));
+  const totalRev=sum(FILTERED,'revenue')||1;
+
+  mkChart('br-bar',{type:'bar',data:{labels:brN,datasets:[
+    {label:'Current',data:brN.map(b=>sum(byBr[b],'revenue')),backgroundColor:brN.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:5,borderWidth:0},
+    {label:'LM',data:brN.map(b=>sum(byBrLM[b]||[],'revenue')),backgroundColor:'rgba(255,255,255,0.08)',borderRadius:5,borderWidth:0},
+    {label:'LY',data:brN.map(b=>sum(byBrLY[b]||[],'revenue')),backgroundColor:'rgba(255,255,255,0.04)',borderRadius:5,borderWidth:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>fB(v)},grid:{color:GC}}}}});
+
+  mkChart('cat-bar',{type:'doughnut',data:{labels:catN,datasets:[{data:catN.map(c=>sum(byCat[c],'revenue')),backgroundColor:catN.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:true,position:'right',labels:{color:TC,font:{size:10},boxWidth:10,padding:6}}}}});
+
+  document.getElementById('brand-matrix').innerHTML=`<table><thead><tr><th>Brand \\ Channel</th>${chN.map(c=>`<th class="nr">${c}</th>`).join('')}<th class="nr">Total</th></tr></thead><tbody>${
+    brN.map(br=>{const brt=sum(byBr[br],'revenue');return`<tr><td class="white">${br}</td>${chN.map(ch=>{const v=FILTERED.filter(r=>r.brand===br&&r.channel===ch).reduce((a,r)=>a+r.revenue,0);return`<td class="nr" style="color:${v>0?'var(--text)':'var(--text3)'}">${v>0?fB(v):'—'}</td>`;}).join('')}<td class="nr white">${fB(brt)}</td></tr>`;}).join('')
+  }</tbody></table>`;
+
+  const tbody=document.getElementById('tbl-brand-body');tbody.innerHTML='';
+  brN.forEach((br,i)=>{
+    const cm=calcM(byBr[br]),clm=calcM(byBrLM[br]||[]),cly=calcM(byBrLY[br]||[]);
+    const vlm=clm.revenue?cm.revenue/clm.revenue-1:null,vly=cly.revenue?cm.revenue/cly.revenue-1:null;
+    tbody.insertAdjacentHTML('beforeend',`<tr>
+      <td class="white" style="color:${COLORS[i%COLORS.length]}">${br}</td>
+      <td class="nr white">${fB(cm.revenue)}</td>
+      <td class="nr ${vlm!==null?colV(vlm):''}">${vlm!==null?fD(vlm):'—'}</td>
+      <td class="nr ${vly!==null?colV(vly):''}">${vly!==null?fD(vly):'—'}</td>
+      <td class="nr ${cm.gp_pct>0.28?'green':'red'}">${fP(cm.gp_pct)}</td>
+      <td class="nr">${fK(cm.sale_unit)}</td><td class="nr">${fK(cm.orders)}</td><td class="nr">${fB(cm.aov)}</td>
+      <td class="nr">${fP(cm.revenue/totalRev)}</td>
+    </tr>`);
+  });
+}
+
+// ─── CUSTOMER ─────────────────────────────────────────────────────────────
+function renderCustomer(){
+  const m=calcM(FILTERED),lm=calcM(FILTERED_LM),ly=calcM(FILTERED_LY);
+  const tc=m.new_cust+m.ret_cust||1,ltc=lm.new_cust+lm.ret_cust||1;
+  const vnc=lm.new_cust?m.new_cust/lm.new_cust-1:null,vrc=lm.ret_cust?m.ret_cust/lm.ret_cust-1:null;
+  document.getElementById('cust-kpis').innerHTML=`
+    <div class="kc hi"><div class="kl">New Customers</div><div class="kv sm">${fK(m.new_cust)}</div>
+      <div class="kbadges">${vnc!==null?`<span class="${kbCls(vnc)} kb">LM ${fD(vnc)}</span>`:''} ${ly.new_cust?`<span class="${kbCls(m.new_cust/ly.new_cust-1)} kb">LY ${fD(m.new_cust/ly.new_cust-1)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">Returning Customers</div><div class="kv sm">${fK(m.ret_cust)}</div>
+      <div class="kbadges">${vrc!==null?`<span class="${kbCls(vrc)} kb">LM ${fD(vrc)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">New %</div><div class="kv sm">${fP(m.new_cust/tc)}</div>
+      <div class="kbadges"><span class="kb nu">LM ${fP(lm.new_cust/ltc)}</span></div></div>
+    <div class="kc"><div class="kl">Repeat Rate</div><div class="kv sm">${fP(m.ret_cust/tc)}</div>
+      <div class="kbadges"><span class="${kbCls(m.ret_cust/tc-lm.ret_cust/ltc)} kb">LM ${fDpp(m.ret_cust/tc-lm.ret_cust/ltc)}</span></div></div>
+  `;
+  const bd=groupBy(FILTERED,'date'),dates=Object.keys(bd).sort();
+  mkChart('cust-trend',{type:'bar',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'New',data:dates.map(d=>sum(bd[d],'new_customers')),backgroundColor:'#4f8ef7',borderRadius:3,borderWidth:0,stack:'s'},
+    {label:'Returning',data:dates.map(d=>sum(bd[d],'returning_customers')),backgroundColor:'#27c97e',borderRadius:3,borderWidth:0,stack:'s'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10}},grid:{color:GC}},stacked:true}}});
+
+  const byCh=groupBy(FILTERED,'channel');
+  const chN=Object.keys(byCh).sort((a,b)=>sum(byCh[b],'new_customers')-sum(byCh[a],'new_customers'));
+  mkChart('cust-acq',{type:'bar',data:{labels:chN,datasets:[{data:chN.map(c=>sum(byCh[c],'new_customers')),backgroundColor:chN.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:5,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
+
+  const byChLM=groupBy(FILTERED_LM,'channel'),byChLY=groupBy(FILTERED_LY,'channel');
+  const tbody=document.getElementById('tbl-cust-body');tbody.innerHTML='';
+  chN.forEach((ch,i)=>{
+    const newC=sum(byCh[ch],'new_customers'),retC=sum(byCh[ch],'returning_customers');
+    const lmNew=sum(byChLM[ch]||[],'new_customers'),lyNew=sum(byChLY[ch]||[],'new_customers');
+    const vlm=lmNew?newC/lmNew-1:null,vly=lyNew?newC/lyNew-1:null;
+    tbody.insertAdjacentHTML('beforeend',`<tr>
+      <td class="white" style="color:${COLORS[i%COLORS.length]}">${ch}</td>
+      <td class="nr white">${fK(newC)}</td>
+      <td class="nr ${vlm!==null?colV(vlm):''}">${vlm!==null?fD(vlm):'—'}</td>
+      <td class="nr ${vly!==null?colV(vly):''}">${vly!==null?fD(vly):'—'}</td>
+      <td class="nr">${fK(retC)}</td><td class="nr">${fP(newC/(newC+retC||1))}</td><td class="nr">${fK(newC+retC)}</td>
+    </tr>`);
+  });
+}
+
+// ─── MARKETING ────────────────────────────────────────────────────────────
+function renderMarketing(){
+  if(!MKT.length){
+    document.getElementById('mkt-kpis').innerHTML='<div style="grid-column:1/-1;color:var(--text3);font-size:12px;padding:20px;text-align:center;font-family:var(--mono)">Connect Sheet 6 (Marketing daily) to see marketing data</div>';
+    return;
+  }
+  // Filter by current period
+  const{s,e}=getPeriodDates(PERIOD);
+  const mktF=MKT.filter(r=>r.date&&r.date>=s&&r.date<=e);
+  const mktLM=MKT.filter(r=>{const lm=shiftRange(s,e,'lm');return r.date&&r.date>=lm.s&&r.date<=lm.e;});
+
+  const spend=sum(mktF,'spend'),rev=sum(mktF,'revenue'),orders=sum(mktF,'orders'),newC=sum(mktF,'new_customers');
+  const roas=spend?rev/spend:0,cpa=orders?spend/orders:0,cac=newC?spend/newC:0;
+  const lmSpend=sum(mktLM,'spend'),lmRoas=lmSpend?sum(mktLM,'revenue')/lmSpend:0;
+
+  document.getElementById('mkt-kpis').innerHTML=`
+    <div class="kc hi"><div class="kl">Total Spend</div><div class="kv sm">${fB(spend)}</div>
+      <div class="kbadges">${lmSpend?`<span class="${kbCls(-(spend/lmSpend-1))} kb">LM ${fD(spend/lmSpend-1)}</span>`:''}</div></div>
+    <div class="kc ${roas>=4?'hi-g':roas>=2?'hi-a':'hi-r'}"><div class="kl">ROAS</div><div class="kv sm">${roas.toFixed(2)}x</div>
+      <div class="kbadges">${lmRoas?`<span class="${kbCls(roas/lmRoas-1)} kb">LM ${fD(roas/lmRoas-1)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">CPA</div><div class="kv sm">${fB(cpa)}</div><div class="kbadges"><span class="kb nu">per order</span></div></div>
+    <div class="kc"><div class="kl">CAC</div><div class="kv sm">${cac?fB(cac):'—'}</div><div class="kbadges"><span class="kb nu">per new customer</span></div></div>
+  `;
+
+  const byCh=groupBy(mktF,'channel');
+  const chN=Object.keys(byCh).sort((a,b)=>sum(byCh[b],'spend')-sum(byCh[a],'spend'));
+  mkChart('mkt-bar',{type:'bar',data:{labels:chN,datasets:[
+    {label:'Spend',data:chN.map(c=>sum(byCh[c],'spend')),backgroundColor:chN.map((_,i)=>COLORS[i%COLORS.length]+'88'),borderRadius:4,borderWidth:0},
+    {label:'Revenue',data:chN.map(c=>sum(byCh[c],'revenue')),backgroundColor:chN.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:4,borderWidth:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10}}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>fB(v)},grid:{color:GC}}}}});
+
+  mkChart('mkt-roas-bar',{type:'bar',data:{labels:chN,datasets:[{data:chN.map(c=>{const s=sum(byCh[c],'spend'),r=sum(byCh[c],'revenue');return s?( r/s).toFixed(2):0;}),backgroundColor:chN.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:5,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>v+'x'},grid:{color:GC}}}}});
+
+  const byCamp=groupBy(mktF,'campaign');
+  const campN=Object.keys(byCamp).sort((a,b)=>sum(byCamp[b],'revenue')-sum(byCamp[a],'revenue'));
+  const tbody=document.getElementById('tbl-mkt-body');tbody.innerHTML='';
+  campN.forEach(camp=>{
+    const rows=byCamp[camp];
+    const sp=sum(rows,'spend'),rv=sum(rows,'revenue'),ord=sum(rows,'orders'),cl=sum(rows,'clicks'),im=sum(rows,'impressions'),nc=sum(rows,'new_customers');
+    const ro=sp?rv/sp:0,cp=ord?sp/ord:0,ct=im?cl/im:0,cv=cl?ord/cl:0;
+    const ch=(rows[0]||{}).channel||'—';
+    tbody.insertAdjacentHTML('beforeend',`<tr>
+      <td class="white">${camp}</td><td>${ch}</td>
+      <td class="nr">${fB(sp)}</td><td class="nr">${fB(rv)}</td>
+      <td class="nr ${ro>=4?'green':ro>=2?'amber':'red'}">${ro.toFixed(1)}x</td>
+      <td class="nr">${fK(ord)}</td><td class="nr">${fB(cp)}</td>
+      <td class="nr">${fP(ct)}</td><td class="nr">${fP(cv)}</td>
+    </tr>`);
+  });
+}
+
+// ─── SELL-THROUGH ─────────────────────────────────────────────────────────
+function renderSTR(){
+  if(!STR.length){
+    document.getElementById('str-kpis').innerHTML='<div style="grid-column:1/-1;color:var(--text3);font-size:12px;padding:20px;text-align:center;font-family:var(--mono)">Connect Sheet 2 (InventorySTR) to see sell-through data</div>';
+    return;
+  }
+  // Fill filter selects
+  const fillS=(id,items)=>{const sel=document.getElementById(id);if(!sel)return;const cur=sel.value;while(sel.options.length>1)sel.remove(1);items.forEach(v=>sel.appendChild(new Option(v,v)));sel.value=cur;};
+  fillS('sf-brand',unique(STR.map(r=>r.brand)));
+  fillS('sf-cat',unique(STR.map(r=>r.category)));
+
+  // Apply filters
+  const fb=(document.getElementById('sf-brand')||{}).value||'';
+  const fc=(document.getElementById('sf-cat')||{}).value||'';
+  const ff=(document.getElementById('sf-flag')||{}).value||'';
+
+  // Compute metrics per row
+  const rows=STR.map(r=>{
+    const pct_online=r.ttl_stock>0?r.ttl_online_stock/r.ttl_stock:0;
+    const online_str=r.ttl_online_stock>0?r.units_sold/r.ttl_online_stock:0;
+    return{...r,pct_online,online_str};
+  }).filter(r=>{
+    if(fb&&r.brand!==fb)return false;
+    if(fc&&r.category!==fc)return false;
+    if(ff==='oos'&&r.oos_flag!==1)return false;
+    if(ff==='slow'&&!(r.online_str<0.3||r.slow_mover_flag===1))return false;
+    if(ff==='healthy'&&(r.oos_flag===1||r.slow_mover_flag===1||r.online_str<0.3))return false;
+    return true;
+  });
+
+  // Aggregates
+  const totTtl=rows.reduce((a,r)=>a+r.ttl_stock,0);
+  const totOnline=rows.reduce((a,r)=>a+r.ttl_online_stock,0);
+  const totSold=rows.reduce((a,r)=>a+r.units_sold,0);
+  const totVal=rows.reduce((a,r)=>a+r.stock_value,0);
+  const avgOnlineStr=totOnline>0?totSold/totOnline:0;
+  const pctOnline=totTtl>0?totOnline/totTtl:0;
+  const oosC=rows.filter(r=>r.oos_flag===1).length;
+  const slowC=rows.filter(r=>r.online_str<0.3||r.slow_mover_flag===1).length;
+  const healthyC=rows.length-oosC-slowC;
+
+  // Alerts
+  const strAlerts=[];
+  if(oosC>0)strAlerts.push({t:'bad',icon:'❌',msg:`${oosC} SKU${oosC>1?'s':''} out of stock — immediate replenishment needed`});
+  if(slowC>0)strAlerts.push({t:'warn',icon:'🐢',msg:`${slowC} slow-moving SKU${slowC>1?'s':''} with %Online ST below 30% — consider markdown`});
+  if(avgOnlineStr>=0.6)strAlerts.push({t:'ok',icon:'✓',msg:`Overall %Online ST at ${fP(avgOnlineStr)} — healthy sell-through`});
+  document.getElementById('str-alerts').innerHTML=strAlerts.map(a=>`<div class="alert ${a.t}"><span style="font-size:14px;flex-shrink:0">${a.icon}</span><span>${a.msg}</span></div>`).join('');
+
+  // KPIs
+  document.getElementById('str-kpis').innerHTML=`
+    <div class="kc hi"><div class="kl">%Online Sell-Through</div><div class="kv sm ${avgOnlineStr>=0.6?'green':avgOnlineStr>=0.3?'amber':'red'}">${fP(avgOnlineStr)}</div>
+      <div class="kbadges"><span class="kb nu">Units: ${fK(totSold)} / ${fK(totOnline)}</span></div></div>
+    <div class="kc"><div class="kl">Total Stock</div><div class="kv sm">${fK(totTtl)}</div>
+      <div class="kbadges"><span class="kb nu">฿${(totVal/1e6).toFixed(1)}M value</span></div></div>
+    <div class="kc"><div class="kl">Online Stock</div><div class="kv sm">${fK(totOnline)}</div>
+      <div class="kbadges"><span class="kb nu">%Online ${fP(pctOnline)}</span></div></div>
+    <div class="kc ${oosC>0?'hi-r':'hi-g'}"><div class="kl">OOS SKUs</div><div class="kv sm ${oosC>0?'red':'green'}">${oosC}</div>
+      <div class="kbadges"><span class="${oosC>0?'kb dn':'kb up'} kb">${oosC>0?'Action needed':'All stocked'}</span></div></div>
+    <div class="kc ${slowC>5?'hi-a':''}"><div class="kl">Slow Movers</div><div class="kv sm ${slowC>5?'amber':''}">${slowC}</div>
+      <div class="kbadges"><span class="${slowC>5?'kb wa':'kb nu'} kb">%Online ST &lt;30%</span></div></div>
+  `;
+
+  // Brand chart
+  const byBrand={};
+  rows.forEach(r=>{const b=r.brand||'?';if(!byBrand[b])byBrand[b]={online:0,sold:0};byBrand[b].online+=r.ttl_online_stock;byBrand[b].sold+=r.units_sold;});
+  const brN=Object.keys(byBrand).sort((a,b)=>byBrand[b].sold-byBrand[a].sold);
+  mkChart('str-brand-bar',{type:'bar',data:{labels:brN,datasets:[{label:'%Online ST',data:brN.map(b=>byBrand[b].online>0?(byBrand[b].sold/byBrand[b].online*100).toFixed(1):0),backgroundColor:brN.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:5,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:9}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>v+'%'},grid:{color:GC},max:100}}}});
+
+  // Health donut
+  mkChart('str-health',{type:'doughnut',data:{labels:['Healthy','Slow Mover','OOS'],datasets:[{data:[healthyC,slowC-oosC,oosC],backgroundColor:['#27c97e','#f0a428','#f05252'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'right',labels:{color:TC,font:{size:11},boxWidth:10,padding:8}}}}});
+
+  // OOS table
+  const oosRows=rows.filter(r=>r.oos_flag===1).sort((a,b)=>b.units_sold-a.units_sold);
+  document.getElementById('oos-cnt').textContent=`${oosRows.length} SKUs`;
+  const oosTb=document.getElementById('tbl-oos-body');oosTb.innerHTML='';
+  oosRows.forEach(r=>oosTb.insertAdjacentHTML('beforeend',`<tr>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r.sku||'—'}</td>
+    <td class="white">${r.product_name||'—'}</td><td>${r.brand||'—'}</td><td>${r.category||'—'}</td>
+    <td class="nr">${fK(r.units_sold)}</td><td class="nr red">${fP(r.online_str)}</td>
+    <td><span class="st bad">OOS</span></td>
+  </tr>`));
+
+  // Slow movers table
+  const slowRows=rows.filter(r=>r.online_str<0.3||r.slow_mover_flag===1).sort((a,b)=>a.online_str-b.online_str);
+  document.getElementById('slow-cnt').textContent=`${slowRows.length} SKUs`;
+  const slowTb=document.getElementById('tbl-slow-body');slowTb.innerHTML='';
+  slowRows.forEach(r=>slowTb.insertAdjacentHTML('beforeend',`<tr>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r.sku||'—'}</td>
+    <td class="white">${r.product_name||'—'}</td><td>${r.brand||'—'}</td>
+    <td class="nr ${r.online_str<0.2?'red':'amber'}">${fP(r.online_str)}</td>
+    <td class="nr">${fK(r.ttl_stock)}</td><td class="nr">${fB(r.stock_value)}</td>
+    <td><span class="st ${r.online_str<0.2?'bad':'warn'}">${r.online_str<0.2?'Markdown':'Promote'}</span></td>
+  </tr>`));
+
+  // Full table
+  document.getElementById('str-total').textContent=`${rows.length} SKUs`;
+  const strTb=document.getElementById('tbl-str-body');strTb.innerHTML='';
+  [...rows].sort((a,b)=>b.units_sold-a.units_sold).forEach(r=>{
+    const isOOS=r.oos_flag===1,isSlow=r.online_str<0.3||r.slow_mover_flag===1;
+    const health=isOOS?'<span class="st bad">OOS</span>':isSlow?'<span class="st warn">Slow</span>':'<span class="st ok">Good</span>';
+    strTb.insertAdjacentHTML('beforeend',`<tr>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r.sku||'—'}</td>
+      <td class="white">${r.product_name||'—'}</td><td>${r.brand||'—'}</td><td>${r.category||'—'}</td>
+      <td class="nr">${fK(r.ttl_stock)}</td>
+      <td class="nr">${fK(r.ttl_online_stock)}</td>
+      <td class="nr ${r.pct_online>=0.5?'green':'amber'}">${fP(r.pct_online)}</td>
+      <td class="nr">${fK(r.units_sold)}</td>
+      <td class="nr ${r.online_str>=0.6?'green':r.online_str>=0.3?'amber':'red'}">${fP(r.online_str)}</td>
+      <td class="nr">${fP(r.gp_pct)}</td>
+      <td class="nr">${fB(r.selling_price)}</td>
+      <td class="nr">${fB(r.stock_value)}</td>
+      <td>${health}</td>
+    </tr>`);
+  });
+}
+
+// ─── DAILY ────────────────────────────────────────────────────────────────
+function renderDaily(){
+  const bd=groupBy(FILTERED,'date'),bdLM=groupBy(FILTERED_LM,'date'),bdLY=groupBy(FILTERED_LY,'date');
+  const dates=Object.keys(bd).sort();
+  const dR=dates.map(d=>sum(bd[d],'revenue')),dB=dates.map(d=>sum(bd[d],'budget_revenue'));
+  const dO=dates.map(d=>sum(bd[d],'orders')),dS=dates.map(d=>sum(bd[d],'sessions'));
+  const dGP=dates.map(d=>sum(bd[d],'gross_profit')),dGPPct=dates.map((d,i)=>dR[i]?dGP[i]/dR[i]*100:0);
+  const dSU=dates.map(d=>sum(bd[d],'sale_unit'));
+  const dCV=dates.map((_,i)=>dS[i]?dO[i]/dS[i]*100:0);
+  const avgR=dR.reduce((a,v)=>a+v,0)/(dR.length||1);
+  const best=dR.indexOf(Math.max(...dR)),worst=dR.indexOf(Math.min(...dR));
+  const dLM=dates.map(d=>{const ld=addMonths(d,-1);return bdLM[ld]?sum(bdLM[ld],'revenue'):null;});
+  const dLY=dates.map(d=>{const ld=addYears(d,-1);return bdLY[ld]?sum(bdLY[ld],'revenue'):null;});
+
+  document.getElementById('dy-kpis').innerHTML=`
+    <div class="kc"><div class="kl">Avg daily revenue</div><div class="kv sm">${fB(avgR)}</div></div>
+    <div class="kc hi-g"><div class="kl">Best day</div><div class="kv xs green">${dates[best]?fmtLbl(dates[best]):'—'}</div><div class="kbadges"><span class="kb up">${fB(dR[best]||0)}</span></div></div>
+    <div class="kc hi-r"><div class="kl">Weakest day</div><div class="kv xs red">${dates[worst]?fmtLbl(dates[worst]):'—'}</div><div class="kbadges"><span class="kb dn">${fB(dR[worst]||0)}</span></div></div>
+    <div class="kc"><div class="kl">Days tracked</div><div class="kv sm">${dates.length}</div><div class="kbadges"><span class="kb nu">vs BG ${fD(dB.reduce((a,v)=>a+v,0)?dR.reduce((a,v)=>a+v,0)/dB.reduce((a,v)=>a+v,0)-1:0)}</span></div></div>
+  `;
+
+  mkChart('dy-rev',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Actual',data:dR,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,0.07)',fill:true,tension:0.35,borderWidth:2,pointRadius:3},
+    {label:'Budget',data:dB,borderColor:TC,borderDash:[4,3],fill:false,tension:0.35,borderWidth:1.5,pointRadius:0},
+    {label:'LM equiv',data:dLM,borderColor:COLORS[2],borderDash:[3,2],fill:false,tension:0.35,borderWidth:1.5,pointRadius:0,spanGaps:true},
+    {label:'LY equiv',data:dLY,borderColor:COLORS[1],fill:false,tension:0.35,borderWidth:1.5,pointRadius:0,spanGaps:true}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>fB(v)},grid:{color:GC}}}}});
+
+  // DOW heatmap
+  const DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dowR={Mon:[],Tue:[],Wed:[],Thu:[],Fri:[],Sat:[],Sun:[]};
+  dates.forEach((d,i)=>{const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(d).getDay()];if(dowR[dn])dowR[dn].push(dR[i]);});
+  const dowAvg=DOW.map(d=>dowR[d].length?dowR[d].reduce((a,v)=>a+v,0)/dowR[d].length:0);
+  const maxDow=Math.max(...dowAvg)||1;
+  document.getElementById('heatmap-dow').innerHTML=`<div class="heatmap" style="grid-template-columns:repeat(7,1fr)">${
+    DOW.map((d,i)=>{const pct=dowAvg[i]/maxDow;const bg=`rgba(79,142,247,${0.1+pct*0.7})`;
+      return`<div class="hm-cell" style="background:${bg};color:${pct>0.5?'#fff':'var(--text2)'}"><div style="font-size:9px;opacity:.7">${d}</div><div style="font-weight:600;margin-top:2px">${dowAvg[i]?fB(dowAvg[i]):'—'}</div></div>`;
+    }).join('')
+  }</div><div style="font-size:10px;color:var(--text3);margin-top:8px;font-family:var(--mono)">Avg revenue by day of week · darker = higher</div>`;
+
+  mkChart('dy-ord-cvr',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Orders',data:dO,borderColor:'#7c5ff7',fill:false,tension:0.4,borderWidth:2,pointRadius:2,yAxisID:'y'},
+    {label:'CVR%',data:dCV,borderColor:'#e85d8a',fill:false,tension:0.4,borderWidth:2,pointRadius:2,yAxisID:'y2'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{
+    x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},
+    y:{position:'left',ticks:{color:TC,font:{size:10}},grid:{color:GC}},
+    y2:{position:'right',ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(1)+'%'},grid:{display:false}}
+  }}});
+
+  // Daily table
+  const tbody=document.getElementById('tbl-daily-body');tbody.innerHTML='';
+  dates.forEach((d,i)=>{
+    const r=dR[i],b=dB[i],lm=dLM[i],ly=dLY[i];
+    const vb=b?r/b-1:null,vlm=lm?r/lm-1:null,vly=ly?r/ly-1:null,cvr=dS[i]?dO[i]/dS[i]:0;
+    tbody.insertAdjacentHTML('beforeend',`<tr${i===best?' style="background:rgba(39,201,126,0.04)"':i===worst?' style="background:rgba(240,82,82,0.04)"':''}>
+      <td class="white">${fmtLbl(d)}</td><td>${dowN(d)}</td>
+      <td class="nr white">${fB(r)}</td><td class="nr">${b?fB(b):'—'}</td>
+      <td class="nr ${vb!==null?colV(vb):''}">${vb!==null?fD(vb):'—'}</td>
+      <td class="nr">${lm?fB(lm):'—'}</td><td class="nr ${vlm!==null?colV(vlm):''}">${vlm!==null?fD(vlm):'—'}</td>
+      <td class="nr">${ly?fB(ly):'—'}</td><td class="nr ${vly!==null?colV(vly):''}">${vly!==null?fD(vly):'—'}</td>
+      <td class="nr">${fB(dGP[i])}</td><td class="nr">${fP(dGPPct[i]/100)}</td><td class="nr">${fK(dSU[i])}</td>
+      <td class="nr">${fK(dO[i])}</td><td class="nr">${fK(dS[i])}</td>
+      <td class="nr ${cvr>0.03?'green':'red'}">${fP(cvr)}</td>
+      <td class="nr">${dO[i]?fB(r/dO[i]):'—'}</td>
+    </tr>`);
+  });
+}
+
+// ─── TEAM KPIs (calculated from ops sheets) ──────────────────────────────
+function renderTeams(){
+  const wrap=document.getElementById('team-wrap');
+  const hasSomeData=OPS.length||CS.length||PC.length||MKT.length;
+  if(!hasSomeData){
+    wrap.innerHTML='<div style="color:var(--text3);font-size:12px;padding:30px;text-align:center;font-family:var(--mono)">Connect Operations / Customer Service / Product Creation / Marketing sheets to see team KPIs</div>';
+    return;
+  }
+
+  const{s,e}=getPeriodDates(PERIOD);
+  const avgField=(arr,field)=>{const vals=arr.filter(r=>r.date&&r.date>=s&&r.date<=e&&r[field]!==undefined).map(r=>r[field]);return vals.length?vals.reduce((a,v)=>a+v,0)/vals.length:null;};
+  const sumField=(arr,field)=>arr.filter(r=>r.date&&r.date>=s&&r.date<=e).reduce((a,r)=>a+(r[field]||0),0);
+  const lastField=(arr,field)=>{const rows=arr.filter(r=>r.date&&r.date>=s&&r.date<=e).sort((a,b)=>b.date.localeCompare(a.date));return rows.length?rows[0][field]:null;};
+
+  const teams=[];
+
+  // Operations
+  if(OPS.length){
+    const fr=avgField(OPS,'fulfillment_rate'),sds=avgField(OPS,'same_day_ship_pct'),aft=avgField(OPS,'avg_fulfillment_hrs');
+    const canc=avgField(OPS,'cancellation_rate'),ret=avgField(OPS,'return_rate'),sla=avgField(OPS,'delivery_sla_hit_pct');
+    const wa=avgField(OPS,'warehouse_accuracy_pct'),proc=sumField(OPS,'orders_processed');
+    teams.push({name:'Operations',color:'var(--amber)',metrics:[
+      {m:'Fulfillment rate',v:fr,t:0.98,fmt:v=>fP(v),lb:false,status:fr>=0.97?'ok':'warn'},
+      {m:'Same-day ship %',v:sds,t:0.80,fmt:v=>fP(v),lb:false,status:sds>=0.75?'ok':'warn'},
+      {m:'Avg fulfillment time',v:aft,t:16,fmt:v=>v?v.toFixed(1)+' hrs':'—',lb:true,status:aft&&aft<=18?'ok':'warn'},
+      {m:'Cancellation rate',v:canc,t:0.03,fmt:v=>fP(v),lb:true,status:canc&&canc<=0.04?'ok':'bad'},
+      {m:'Return rate',v:ret,t:0.035,fmt:v=>fP(v),lb:true,status:ret&&ret<=0.045?'ok':'warn'},
+      {m:'Delivery SLA hit %',v:sla,t:0.92,fmt:v=>fP(v),lb:false,status:sla>=0.88?'ok':'warn'},
+      {m:'Warehouse accuracy',v:wa,t:0.995,fmt:v=>fP(v),lb:false,status:wa>=0.99?'ok':'warn'},
+      {m:'Orders processed',v:proc,t:null,fmt:v=>fK(v),lb:false,status:'ok'},
+    ]});
+  }
+
+  // Customer Service
+  if(CS.length){
+    const art=avgField(CS,'avg_response_hrs'),csat=avgField(CS,'csat_score'),nps=avgField(CS,'nps');
+    const comp=avgField(CS,'complaint_rate'),res=avgField(CS,'resolution_rate'),fcr=avgField(CS,'first_contact_resolution_pct');
+    const opened=sumField(CS,'tickets_opened'),resolved=sumField(CS,'tickets_resolved');
+    teams.push({name:'Customer Service',color:'var(--pink)',metrics:[
+      {m:'Avg response time',v:art,t:2.0,fmt:v=>v?v.toFixed(1)+' hrs':'—',lb:true,status:art&&art<=2.5?'ok':'warn'},
+      {m:'CSAT score',v:csat,t:4.5,fmt:v=>v?v.toFixed(1)+'/5':'—',lb:false,status:csat>=4.2?'ok':'warn'},
+      {m:'NPS',v:nps,t:50,fmt:v=>v?'+'+Math.round(v):'—',lb:false,status:nps>=40?'ok':'warn'},
+      {m:'Complaint rate',v:comp,t:0.015,fmt:v=>fP(v),lb:true,status:comp&&comp<=0.02?'ok':'warn'},
+      {m:'Resolution rate',v:res,t:0.96,fmt:v=>fP(v),lb:false,status:res>=0.94?'ok':'warn'},
+      {m:'First contact res%',v:fcr,t:0.85,fmt:v=>fP(v),lb:false,status:fcr>=0.78?'ok':'warn'},
+      {m:'Tickets resolved',v:resolved,t:null,fmt:fK,lb:false,status:'ok'},
+    ]});
+  }
+
+  // Product Creation
+  if(PC.length){
+    const pub=sumField(PC,'new_skus_published'),ttl=lastField(PC,'avg_go_live_days'),ipr=avgField(PC,'image_pass_rate');
+    const cs2=avgField(PC,'content_score_avg'),suc=avgField(PC,'sku_success_rate_30d'),act=lastField(PC,'active_skus_total');
+    teams.push({name:'Product Creation',color:'var(--accent2)',metrics:[
+      {m:'New SKUs published',v:pub,t:null,fmt:fK,lb:false,status:'ok'},
+      {m:'Avg go-live days',v:ttl,t:7,fmt:v=>v?v.toFixed(1)+' days':'—',lb:true,status:ttl&&ttl<=9?'ok':'warn'},
+      {m:'Image pass rate',v:ipr,t:0.95,fmt:v=>fP(v),lb:false,status:ipr>=0.88?'ok':'warn'},
+      {m:'Content score avg',v:cs2,t:8.5,fmt:v=>v?v.toFixed(1)+'/10':'—',lb:false,status:cs2>=7.5?'ok':'warn'},
+      {m:'SKU success rate 30d',v:suc,t:0.70,fmt:v=>fP(v),lb:false,status:suc>=0.60?'ok':'warn'},
+      {m:'Active SKUs total',v:act,t:null,fmt:fK,lb:false,status:'ok'},
+    ]});
+  }
+
+  // Marketing (from MKT sheet)
+  if(MKT.length){
+    const{s,e}=getPeriodDates(PERIOD);
+    const mktF=MKT.filter(r=>r.date&&r.date>=s&&r.date<=e);
+    const spend=sum(mktF,'spend'),rev=sum(mktF,'revenue'),orders=sum(mktF,'orders'),nc=sum(mktF,'new_customers');
+    const roas=spend?rev/spend:0,cpa=orders?spend/orders:0,cac=nc?spend/nc:0;
+    const avgCtr=sum(mktF,'impressions')>0?sum(mktF,'clicks')/sum(mktF,'impressions'):0;
+    const avgCvr=sum(mktF,'clicks')>0?sum(mktF,'orders')/sum(mktF,'clicks'):0;
+    teams.push({name:'Marketing',color:'var(--accent)',metrics:[
+      {m:'Total spend',v:spend,t:null,fmt:fB,lb:true,status:'ok'},
+      {m:'ROAS',v:roas,t:5.0,fmt:v=>v.toFixed(2)+'x',lb:false,status:roas>=4?'ok':roas>=2?'warn':'bad'},
+      {m:'CPA',v:cpa,t:170,fmt:v=>fB(v),lb:true,status:cpa&&cpa<=200?'ok':'warn'},
+      {m:'CAC',v:cac,t:null,fmt:v=>v?fB(v):'—',lb:true,status:'ok'},
+      {m:'CTR',v:avgCtr,t:0.025,fmt:v=>fP(v),lb:false,status:avgCtr>=0.03?'ok':'warn'},
+      {m:'Campaign CVR',v:avgCvr,t:0.015,fmt:v=>fP(v),lb:false,status:avgCvr>=0.01?'ok':'warn'},
+      {m:'New customers',v:nc,t:null,fmt:fK,lb:false,status:'ok'},
+    ]});
+  }
+
+  // Render team cards
+  const TEAM_COLORS={Operations:'var(--amber)','Customer Service':'var(--pink)','Product Creation':'var(--accent2)',Marketing:'var(--accent)'};
+  wrap.innerHTML=`<div class="team-grid">${teams.map(team=>{
+    const okC=team.metrics.filter(x=>x.status==='ok').length;
+    const warnC=team.metrics.filter(x=>x.status==='warn').length;
+    const badC=team.metrics.filter(x=>x.status==='bad').length;
+    return`<div class="team-card">
+      <div class="team-head">
+        <span class="team-name" style="color:${team.color}">${team.name}</span>
+        <div class="team-badges">
+          ${okC>0?`<span class="kb up">${okC}✓</span>`:''}
+          ${warnC>0?`<span class="kb wa">${warnC}⚠</span>`:''}
+          ${badC>0?`<span class="kb dn">${badC}✗</span>`:''}
+        </div>
+      </div>
+      ${team.metrics.map(({m,v,t,fmt,lb,status})=>{
+        const statusDot=status==='ok'?'var(--green)':status==='bad'?'var(--red)':'var(--amber)';
+        const vsTgt=t&&v?lb?(v<=t?'green':'red'):(v>=t?'green':'warn'):null;
+        return`<div class="mini">
+          <span class="ml" style="display:flex;align-items:center;gap:6px">
+            <span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0;display:inline-block"></span>
+            ${m}
+          </span>
+          <span class="mv">
+            <span style="color:var(--text);font-weight:600">${v!==null&&v!==undefined?fmt(v):'—'}</span>
+            ${t?`<span class="kb nu" style="font-size:9px">T:${typeof t==='number'&&t<1&&t>0?fP(t):(t>100?fK(t):t)}</span>`:''}
+          </span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+
+// ─── OPERATIONS ──────────────────────────────────────────────────────────────
+function renderOps(){
+  if(!OPS.length){['ops-kpis1','ops-kpis2'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div style="grid-column:1/-1;color:var(--text3);font-size:12px;padding:20px;text-align:center;font-family:var(--mono)">Connect Sheet 3 (Operations) to see ops data</div>';});return;}
+  const{s,e}=getPeriodDates(PERIOD);
+  const rows=OPS.filter(r=>r.date&&r.date>=s&&r.date<=e).sort((a,b)=>a.date.localeCompare(b.date));
+  const lmR=shiftRange(s,e,'lm');const lmRows=OPS.filter(r=>r.date&&r.date>=lmR.s&&r.date<=lmR.e);
+  if(!rows.length){document.getElementById('ops-kpis1').innerHTML='<div style="grid-column:1/-1;color:var(--text3);font-size:12px;padding:20px;text-align:center;font-family:var(--mono)">No ops data in this period</div>';return;}
+  const avg=(arr,k)=>{const v=arr.map(r=>r[k]).filter(x=>x!==undefined&&x!==null&&!isNaN(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:0;};
+  const sumF=(arr,k)=>arr.reduce((a,r)=>a+(r[k]||0),0);
+  const fr=avg(rows,'fulfillment_rate'),sds=avg(rows,'same_day_ship_pct'),aft=avg(rows,'avg_fulfillment_hrs');
+  const cr=avg(rows,'cancellation_rate'),rr=avg(rows,'return_rate'),sla=avg(rows,'delivery_sla_hit_pct');
+  const wa=avg(rows,'warehouse_accuracy_pct'),proc=sumF(rows,'orders_processed'),shipped=sumF(rows,'orders_shipped');
+  const pending=sumF(rows,'orders_pending');
+  const lmFr=avg(lmRows,'fulfillment_rate'),lmSds=avg(lmRows,'same_day_ship_pct'),lmRr=avg(lmRows,'return_rate'),lmCr=avg(lmRows,'cancellation_rate');
+  const alerts=[];
+  if(cr>0.04)alerts.push({t:'bad',icon:'❌',msg:`Cancellation rate ${fP(cr)} above 4% — review checkout`});
+  if(rr>0.045)alerts.push({t:'warn',icon:'↩️',msg:`Return rate ${fP(rr)} elevated`});
+  if(fr<0.97)alerts.push({t:'warn',icon:'⚠️',msg:`Fulfillment rate ${fP(fr)} below 97% target`});
+  if(sla>=0.90)alerts.push({t:'ok',icon:'✓',msg:`Delivery SLA ${fP(sla)} on target`});
+  document.getElementById('ops-alerts').innerHTML=alerts.slice(0,3).map(a=>`<div class="alert ${a.t}"><span style="font-size:14px;flex-shrink:0">${a.icon}</span><span>${a.msg}</span></div>`).join('');
+  document.getElementById('ops-kpis1').innerHTML=`
+    <div class="kc ${fr>=0.97?'hi-g':fr>=0.95?'hi-a':'hi-r'}"><div class="kl">Fulfillment Rate</div><div class="kv sm ${fr>=0.97?'green':fr>=0.95?'amber':'red'}">${fP(fr)}</div><div class="kbadges"><span class="kb nu">Target ≥97%</span>${lmFr?`<span class="${kbCls(fr-lmFr)} kb">LM ${fDpp(fr-lmFr)}</span>`:''}</div></div>
+    <div class="kc ${sds>=0.75?'hi-g':'hi-a'}"><div class="kl">Same-Day Ship%</div><div class="kv sm ${sds>=0.75?'green':'amber'}">${fP(sds)}</div><div class="kbadges"><span class="kb nu">Target ≥75%</span>${lmSds?`<span class="${kbCls(sds-lmSds)} kb">LM ${fDpp(sds-lmSds)}</span>`:''}</div></div>
+    <div class="kc ${aft<=18?'hi-g':'hi-r'}"><div class="kl">Avg Fulfil Time</div><div class="kv sm ${aft<=16?'green':aft<=20?'amber':'red'}">${aft.toFixed(1)} hrs</div><div class="kbadges"><span class="kb nu">Target ≤18 hrs</span></div></div>
+    <div class="kc ${sla>=0.90?'hi-g':'hi-a'}"><div class="kl">Delivery SLA Hit%</div><div class="kv sm ${sla>=0.90?'green':'amber'}">${fP(sla)}</div><div class="kbadges"><span class="kb nu">Target ≥90%</span></div></div>
+  `;
+  document.getElementById('ops-kpis2').innerHTML=`
+    <div class="kc ${wa>=0.99?'hi-g':'hi-a'}"><div class="kl">Warehouse Accuracy</div><div class="kv sm ${wa>=0.99?'green':'amber'}">${fP(wa)}</div><div class="kbadges"><span class="kb nu">Target ≥99.5%</span></div></div>
+    <div class="kc ${cr<=0.04?'hi-g':'hi-r'}"><div class="kl">Cancellation Rate</div><div class="kv sm ${cr<=0.03?'green':cr<=0.05?'amber':'red'}">${fP(cr)}</div><div class="kbadges"><span class="kb nu">Target ≤3%</span>${lmCr?`<span class="${kbCls(lmCr-cr)} kb">LM ${fDpp(cr-lmCr)}</span>`:''}</div></div>
+    <div class="kc ${rr<=0.045?'hi-g':'hi-r'}"><div class="kl">Return Rate</div><div class="kv sm ${rr<=0.04?'green':rr<=0.055?'amber':'red'}">${fP(rr)}</div><div class="kbadges"><span class="kb nu">Target ≤4%</span>${lmRr?`<span class="${kbCls(lmRr-rr)} kb">LM ${fDpp(rr-lmRr)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">Orders Processed</div><div class="kv sm">${fK(proc)}</div><div class="kbadges"><span class="kb up">${fK(shipped)} shipped</span><span class="${pending>100?'kb wa':'kb nu'} kb">${fK(pending)} pending</span></div></div>
+  `;
+  const dates=rows.map(r=>r.date);
+  mkChart('ops-trend1',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Fulfill Rate%',data:rows.map(r=>(r.fulfillment_rate||0)*100),borderColor:'#27c97e',fill:false,tension:0.4,borderWidth:2,pointRadius:3},
+    {label:'Same-Day Ship%',data:rows.map(r=>(r.same_day_ship_pct||0)*100),borderColor:'#4f8ef7',fill:false,tension:0.4,borderWidth:2,pointRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(0)+'%'},grid:{color:GC},min:60,max:100}}}});
+  mkChart('ops-trend2',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Return Rate%',data:rows.map(r=>(r.return_rate||0)*100),borderColor:'#f05252',fill:false,tension:0.4,borderWidth:2,pointRadius:3},
+    {label:'Cancel Rate%',data:rows.map(r=>(r.cancellation_rate||0)*100),borderColor:'#f0a428',fill:false,tension:0.4,borderWidth:2,pointRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(1)+'%'},grid:{color:GC}}}}});
+  mkChart('ops-orders-bar',{type:'bar',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Processed',data:rows.map(r=>r.orders_processed||0),backgroundColor:'rgba(79,142,247,0.55)',borderRadius:3,borderWidth:0},
+    {label:'Shipped',data:rows.map(r=>r.orders_shipped||0),backgroundColor:'rgba(39,201,126,0.55)',borderRadius:3,borderWidth:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
+  mkChart('ops-sla-trend',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Delivery SLA%',data:rows.map(r=>(r.delivery_sla_hit_pct||0)*100),borderColor:'#7c5ff7',fill:false,tension:0.4,borderWidth:2,pointRadius:3,yAxisID:'y'},
+    {label:'Fulfil Time hrs',data:rows.map(r=>r.avg_fulfillment_hrs||0),borderColor:'#f0a428',fill:false,tension:0.4,borderWidth:2,pointRadius:3,yAxisID:'y2'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{position:'left',ticks:{color:TC,font:{size:10},callback:v=>v+'%'},grid:{color:GC},min:70,max:100},y2:{position:'right',ticks:{color:TC,font:{size:10},callback:v=>v+'h'},grid:{display:false}}}}});
+  const tb=document.getElementById('tbl-ops-body');tb.innerHTML='';
+  rows.forEach(r=>tb.insertAdjacentHTML('beforeend',`<tr>
+    <td class="white">${fmtLbl(r.date)}</td><td>${dowN(r.date)}</td>
+    <td class="nr ${r.fulfillment_rate>=0.97?'green':r.fulfillment_rate>=0.95?'amber':'red'}">${fP(r.fulfillment_rate||0)}</td>
+    <td class="nr ${r.same_day_ship_pct>=0.75?'green':'amber'}">${fP(r.same_day_ship_pct||0)}</td>
+    <td class="nr ${(r.avg_fulfillment_hrs||99)<=16?'green':(r.avg_fulfillment_hrs||99)<=20?'amber':'red'}">${r.avg_fulfillment_hrs?r.avg_fulfillment_hrs.toFixed(1):'—'}</td>
+    <td class="nr ${r.delivery_sla_hit_pct>=0.90?'green':'amber'}">${fP(r.delivery_sla_hit_pct||0)}</td>
+    <td class="nr ${r.warehouse_accuracy_pct>=0.99?'green':'amber'}">${fP(r.warehouse_accuracy_pct||0)}</td>
+    <td class="nr">${fK(r.orders_processed||0)}</td><td class="nr">${fK(r.orders_shipped||0)}</td>
+    <td class="nr ${(r.orders_pending||0)>100?'amber':''}">${fK(r.orders_pending||0)}</td>
+    <td class="nr ${r.return_rate<=0.04?'green':r.return_rate<=0.055?'amber':'red'}">${fP(r.return_rate||0)}</td>
+    <td class="nr ${r.cancellation_rate<=0.03?'green':r.cancellation_rate<=0.05?'amber':'red'}">${fP(r.cancellation_rate||0)}</td>
+  </tr>`));
+  tb.insertAdjacentHTML('beforeend',`<tr class="tr-tot"><td>Avg</td><td></td><td class="nr">${fP(fr)}</td><td class="nr">${fP(sds)}</td><td class="nr">${aft.toFixed(1)}h</td><td class="nr">${fP(sla)}</td><td class="nr">${fP(wa)}</td><td class="nr">${fK(Math.round(proc/rows.length))}/d</td><td class="nr">${fK(Math.round(shipped/rows.length))}/d</td><td class="nr">${fK(Math.round(pending/rows.length))}/d</td><td class="nr">${fP(rr)}</td><td class="nr">${fP(cr)}</td></tr>`);
+}
+
+// ─── CUSTOMER SERVICE ────────────────────────────────────────────────────────
+function renderCS(){
+  if(!CS.length){['cs-kpis1','cs-kpis2'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div style="grid-column:1/-1;color:var(--text3);font-size:12px;padding:20px;text-align:center;font-family:var(--mono)">Connect Sheet 4 (Customer Service) to see CS data</div>';});return;}
+  const{s,e}=getPeriodDates(PERIOD);
+  const rows=CS.filter(r=>r.date&&r.date>=s&&r.date<=e).sort((a,b)=>a.date.localeCompare(b.date));
+  const lmR=shiftRange(s,e,'lm');const lmRows=CS.filter(r=>r.date&&r.date>=lmR.s&&r.date<=lmR.e);
+  if(!rows.length){document.getElementById('cs-kpis1').innerHTML='<div style="grid-column:1/-1;color:var(--text3);font-size:12px;padding:20px;text-align:center;font-family:var(--mono)">No CS data in this period</div>';return;}
+  const avg=(arr,k)=>{const v=arr.map(r=>r[k]).filter(x=>x!==undefined&&x!==null&&!isNaN(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:0;};
+  const sumF=(arr,k)=>arr.reduce((a,r)=>a+(r[k]||0),0);
+  const art=avg(rows,'avg_response_hrs'),csat=avg(rows,'csat_score'),nps=avg(rows,'nps');
+  const comp=avg(rows,'complaint_rate'),res=avg(rows,'resolution_rate'),fcr=avg(rows,'first_contact_resolution_pct');
+  const esc=avg(rows,'escalation_rate'),hndl=avg(rows,'avg_handle_mins');
+  const opened=sumF(rows,'tickets_opened'),resolved=sumF(rows,'tickets_resolved'),pending=sumF(rows,'tickets_pending');
+  const lmArt=avg(lmRows,'avg_response_hrs'),lmCsat=avg(lmRows,'csat_score'),lmNps=avg(lmRows,'nps'),lmRes=avg(lmRows,'resolution_rate');
+  const alerts=[];
+  if(art>3)alerts.push({t:'bad',icon:'⏱',msg:`Avg response ${art.toFixed(1)} hrs exceeds 3-hr threshold`});
+  if(csat<4.0)alerts.push({t:'warn',icon:'😟',msg:`CSAT ${csat.toFixed(1)}/5 below 4.0 target`});
+  if(nps>=45)alerts.push({t:'ok',icon:'✓',msg:`NPS +${Math.round(nps)} — strong loyalty`});
+  if(comp>0.025)alerts.push({t:'warn',icon:'📢',msg:`Complaint rate ${fP(comp)} above 2.5%`});
+  document.getElementById('cs-alerts').innerHTML=alerts.slice(0,3).map(a=>`<div class="alert ${a.t}"><span style="font-size:14px;flex-shrink:0">${a.icon}</span><span>${a.msg}</span></div>`).join('');
+  document.getElementById('cs-kpis1').innerHTML=`
+    <div class="kc ${art<=2.5?'hi-g':'hi-r'}"><div class="kl">Avg Response Time</div><div class="kv sm ${art<=2?'green':art<=3?'amber':'red'}">${art.toFixed(1)} hrs</div><div class="kbadges"><span class="kb nu">Target ≤2 hrs</span>${lmArt?`<span class="${kbCls(lmArt-art)} kb">LM ${(art-lmArt>0?'+':'')+(art-lmArt).toFixed(1)}h</span>`:''}</div></div>
+    <div class="kc ${csat>=4.2?'hi-g':'hi-a'}"><div class="kl">CSAT Score</div><div class="kv sm ${csat>=4.3?'green':csat>=3.8?'amber':'red'}">${csat.toFixed(2)}<span style="font-size:11px;color:var(--text3)">/5</span></div><div class="kbadges"><span class="kb nu">Target ≥4.5</span>${lmCsat?`<span class="${kbCls(csat-lmCsat)} kb">LM ${(csat-lmCsat>0?'+':'')+(csat-lmCsat).toFixed(2)}</span>`:''}</div></div>
+    <div class="kc ${nps>=40?'hi-g':'hi-a'}"><div class="kl">NPS</div><div class="kv sm ${nps>=45?'green':nps>=30?'amber':'red'}">${nps>0?'+':''}${Math.round(nps)}</div><div class="kbadges"><span class="kb nu">Target ≥50</span>${lmNps?`<span class="${kbCls(nps-lmNps)} kb">LM +${(nps-lmNps).toFixed(0)}</span>`:''}</div></div>
+    <div class="kc ${res>=0.94?'hi-g':'hi-a'}"><div class="kl">Resolution Rate</div><div class="kv sm ${res>=0.95?'green':res>=0.90?'amber':'red'}">${fP(res)}</div><div class="kbadges"><span class="kb nu">Target ≥96%</span>${lmRes?`<span class="${kbCls(res-lmRes)} kb">LM ${fDpp(res-lmRes)}</span>`:''}</div></div>
+  `;
+  document.getElementById('cs-kpis2').innerHTML=`
+    <div class="kc ${fcr>=0.80?'hi-g':'hi-a'}"><div class="kl">First Contact Res%</div><div class="kv sm ${fcr>=0.82?'green':fcr>=0.72?'amber':'red'}">${fP(fcr)}</div><div class="kbadges"><span class="kb nu">Target ≥85%</span></div></div>
+    <div class="kc ${comp<=0.02?'hi-g':'hi-r'}"><div class="kl">Complaint Rate</div><div class="kv sm ${comp<=0.015?'green':comp<=0.025?'amber':'red'}">${fP(comp)}</div><div class="kbadges"><span class="kb nu">Target ≤1.5%</span></div></div>
+    <div class="kc"><div class="kl">Handle Time</div><div class="kv sm">${hndl.toFixed(1)} mins</div><div class="kbadges"><span class="${esc<=0.03?'kb up':'kb wa'} kb">${fP(esc)} escalated</span></div></div>
+    <div class="kc"><div class="kl">Tickets (period)</div><div class="kv sm">${fK(opened)}</div><div class="kbadges"><span class="kb up">${fK(resolved)} resolved</span><span class="${pending>50?'kb wa':'kb nu'} kb">${fK(pending)} open</span></div></div>
+  `;
+  const dates=rows.map(r=>r.date);
+  mkChart('cs-trend1',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'CSAT /5',data:rows.map(r=>r.csat_score||0),borderColor:'#27c97e',fill:false,tension:0.4,borderWidth:2,pointRadius:3,yAxisID:'y'},
+    {data:dates.map(()=>4.5),borderColor:'rgba(39,201,126,0.25)',borderDash:[4,3],borderWidth:1,pointRadius:0,yAxisID:'y',label:'Target 4.5'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(1)},grid:{color:GC},min:3,max:5}}}});
+  mkChart('cs-trend2',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Resolution%',data:rows.map(r=>(r.resolution_rate||0)*100),borderColor:'#4f8ef7',fill:false,tension:0.4,borderWidth:2,pointRadius:3},
+    {label:'FCR%',data:rows.map(r=>(r.first_contact_resolution_pct||0)*100),borderColor:'#7c5ff7',fill:false,tension:0.4,borderWidth:2,pointRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(0)+'%'},grid:{color:GC},min:60,max:100}}}});
+  mkChart('cs-tickets-bar',{type:'bar',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Opened',data:rows.map(r=>r.tickets_opened||0),backgroundColor:'rgba(79,142,247,0.55)',borderRadius:3,borderWidth:0},
+    {label:'Resolved',data:rows.map(r=>r.tickets_resolved||0),backgroundColor:'rgba(39,201,126,0.55)',borderRadius:3,borderWidth:0},
+    {label:'Pending',data:rows.map(r=>r.tickets_pending||0),backgroundColor:'rgba(240,164,40,0.5)',borderRadius:3,borderWidth:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10}},grid:{color:GC}}}}});
+  mkChart('cs-resp-trend',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Response hrs',data:rows.map(r=>r.avg_response_hrs||0),borderColor:'#f0a428',fill:false,tension:0.4,borderWidth:2,pointRadius:3,yAxisID:'y'},
+    {label:'Escalation%',data:rows.map(r=>(r.escalation_rate||0)*100),borderColor:'#f05252',fill:false,tension:0.4,borderWidth:2,pointRadius:3,yAxisID:'y2'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{position:'left',ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(1)+'h'},grid:{color:GC}},y2:{position:'right',ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(1)+'%'},grid:{display:false}}}}});
+  const tb=document.getElementById('tbl-cs-body');tb.innerHTML='';
+  rows.forEach(r=>tb.insertAdjacentHTML('beforeend',`<tr>
+    <td class="white">${fmtLbl(r.date)}</td><td>${dowN(r.date)}</td>
+    <td class="nr ${r.avg_response_hrs<=2?'green':r.avg_response_hrs<=3?'amber':'red'}">${r.avg_response_hrs?r.avg_response_hrs.toFixed(1):'—'}</td>
+    <td class="nr ${r.csat_score>=4.3?'green':r.csat_score>=3.8?'amber':'red'}">${r.csat_score?r.csat_score.toFixed(2):'—'}</td>
+    <td class="nr ${r.nps>=45?'green':r.nps>=30?'amber':'red'}">${r.nps?'+'+(Math.round(r.nps)):'—'}</td>
+    <td class="nr ${r.complaint_rate<=0.015?'green':r.complaint_rate<=0.025?'amber':'red'}">${fP(r.complaint_rate||0)}</td>
+    <td class="nr ${r.resolution_rate>=0.95?'green':'amber'}">${fP(r.resolution_rate||0)}</td>
+    <td class="nr ${r.first_contact_resolution_pct>=0.82?'green':'amber'}">${fP(r.first_contact_resolution_pct||0)}</td>
+    <td class="nr">${fK(r.tickets_opened||0)}</td><td class="nr green">${fK(r.tickets_resolved||0)}</td>
+    <td class="nr ${(r.tickets_pending||0)>25?'amber':''}">${fK(r.tickets_pending||0)}</td>
+    <td class="nr">${r.avg_handle_mins?r.avg_handle_mins.toFixed(1):'—'}</td>
+    <td class="nr ${r.escalation_rate<=0.03?'green':'amber'}">${fP(r.escalation_rate||0)}</td>
+  </tr>`));
+  tb.insertAdjacentHTML('beforeend',`<tr class="tr-tot"><td>Avg</td><td></td><td class="nr">${art.toFixed(1)}h</td><td class="nr">${csat.toFixed(2)}</td><td class="nr">+${Math.round(nps)}</td><td class="nr">${fP(comp)}</td><td class="nr">${fP(res)}</td><td class="nr">${fP(fcr)}</td><td class="nr">${fK(Math.round(opened/rows.length))}/d</td><td class="nr">${fK(Math.round(resolved/rows.length))}/d</td><td class="nr">${fK(Math.round(pending/rows.length))}/d</td><td class="nr">${hndl.toFixed(1)}</td><td class="nr">${fP(esc)}</td></tr>`);
+}
+
+// ─── PRODUCT CREATION ────────────────────────────────────────────────────────
+function renderPC(){
+  if(!PC.length){['pc-kpis1','pc-kpis2'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div style="grid-column:1/-1;color:var(--text3);font-size:12px;padding:20px;text-align:center;font-family:var(--mono)">Connect Sheet 5 (Product Creation) to see product data</div>';});return;}
+  const{s,e}=getPeriodDates(PERIOD);
+  const rows=PC.filter(r=>r.date&&r.date>=s&&r.date<=e).sort((a,b)=>a.date.localeCompare(b.date));
+  const lmR=shiftRange(s,e,'lm');const lmRows=PC.filter(r=>r.date&&r.date>=lmR.s&&r.date<=lmR.e);
+  if(!rows.length){document.getElementById('pc-kpis1').innerHTML='<div style="grid-column:1/-1;color:var(--text3);font-size:12px;padding:20px;text-align:center;font-family:var(--mono)">No product creation data in this period</div>';return;}
+  const avg=(arr,k)=>{const v=arr.map(r=>r[k]).filter(x=>x!==undefined&&x!==null&&!isNaN(x));return v.length?v.reduce((a,b)=>a+b,0)/v.length:0;};
+  const sumF=(arr,k)=>arr.reduce((a,r)=>a+(r[k]||0),0);
+  const pub=sumF(rows,'new_skus_published'),rej=sumF(rows,'skus_rejected');
+  const gld=avg(rows,'avg_go_live_days'),ipr=avg(rows,'image_pass_rate');
+  const cs2=avg(rows,'content_score_avg'),suc=avg(rows,'sku_success_rate_30d');
+  const rev7=avg(rows,'first_7day_rev_per_sku');
+  const actLast=[...rows].sort((a,b)=>b.date.localeCompare(a.date));
+  const act=actLast.length?actLast[0].active_skus_total:null;
+  const lmPub=sumF(lmRows,'new_skus_published'),lmGld=avg(lmRows,'avg_go_live_days'),lmSuc=avg(lmRows,'sku_success_rate_30d');
+  const alerts=[];
+  if(gld>10)alerts.push({t:'bad',icon:'⏰',msg:`Go-live time ${gld.toFixed(1)} days above target`});
+  if(ipr<0.88)alerts.push({t:'warn',icon:'🖼',msg:`Image pass rate ${fP(ipr)} below 88%`});
+  if(suc>=0.65)alerts.push({t:'ok',icon:'✓',msg:`SKU success rate ${fP(suc)} — strong performance`});
+  if(pub>0&&rej/pub>0.15)alerts.push({t:'warn',icon:'❌',msg:`${rej} SKUs rejected (${fP(rej/pub)}) — review submission quality`});
+  document.getElementById('pc-alerts').innerHTML=alerts.slice(0,3).map(a=>`<div class="alert ${a.t}"><span style="font-size:14px;flex-shrink:0">${a.icon}</span><span>${a.msg}</span></div>`).join('');
+  document.getElementById('pc-kpis1').innerHTML=`
+    <div class="kc"><div class="kl">SKUs Published</div><div class="kv sm">${fK(pub)}</div><div class="kbadges">${lmPub?`<span class="${kbCls(pub/lmPub-1)} kb">LM ${fD(pub/lmPub-1)}</span>`:''}<span class="${rej>pub*0.1?'kb wa':'kb nu'} kb">${rej} rejected</span></div></div>
+    <div class="kc ${gld<=9?'hi-g':'hi-r'}"><div class="kl">Avg Go-Live Days</div><div class="kv sm ${gld<=8?'green':gld<=11?'amber':'red'}">${gld.toFixed(1)} days</div><div class="kbadges"><span class="kb nu">Target ≤7d</span>${lmGld?`<span class="${kbCls(lmGld-gld)} kb">LM ${(gld-lmGld>0?'+':'')+(gld-lmGld).toFixed(1)}d</span>`:''}</div></div>
+    <div class="kc ${ipr>=0.90?'hi-g':'hi-a'}"><div class="kl">Image Pass Rate</div><div class="kv sm ${ipr>=0.92?'green':ipr>=0.85?'amber':'red'}">${fP(ipr)}</div><div class="kbadges"><span class="kb nu">Target ≥95%</span></div></div>
+    <div class="kc ${cs2>=8.0?'hi-g':'hi-a'}"><div class="kl">Content Score Avg</div><div class="kv sm ${cs2>=8.0?'green':cs2>=7.0?'amber':'red'}">${cs2.toFixed(1)}<span style="font-size:11px;color:var(--text3)">/10</span></div><div class="kbadges"><span class="kb nu">Target ≥8.5</span></div></div>
+  `;
+  document.getElementById('pc-kpis2').innerHTML=`
+    <div class="kc ${suc>=0.65?'hi-g':'hi-a'}"><div class="kl">SKU Success Rate 30D</div><div class="kv sm ${suc>=0.65?'green':suc>=0.55?'amber':'red'}">${fP(suc)}</div><div class="kbadges"><span class="kb nu">Target ≥70%</span>${lmSuc?`<span class="${kbCls(suc-lmSuc)} kb">LM ${fDpp(suc-lmSuc)}</span>`:''}</div></div>
+    <div class="kc"><div class="kl">7D Revenue / SKU</div><div class="kv sm">${fB(rev7)}</div><div class="kbadges"><span class="kb nu">avg per new SKU</span></div></div>
+    <div class="kc"><div class="kl">Active SKUs Total</div><div class="kv sm">${act?fK(act):'—'}</div><div class="kbadges"><span class="kb nu">latest snapshot</span></div></div>
+    <div class="kc"><div class="kl">Avg Published/Day</div><div class="kv sm">${rows.length?(pub/rows.length).toFixed(1):'—'}</div><div class="kbadges"><span class="kb nu">${rows.length} days tracked</span></div></div>
+  `;
+  const dates=rows.map(r=>r.date);
+  let cum=0;const cumArr=rows.map(r=>{cum+=r.new_skus_published||0;return cum;});
+  mkChart('pc-sku-trend',{type:'bar',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'New SKUs',data:rows.map(r=>r.new_skus_published||0),backgroundColor:'rgba(124,95,247,0.6)',borderRadius:4,borderWidth:0,yAxisID:'y'},
+    {label:'Cumulative',data:cumArr,borderColor:'#4f8ef7',fill:false,tension:0.4,borderWidth:2,pointRadius:2,type:'line',yAxisID:'y2'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{position:'left',ticks:{color:TC,font:{size:10}},grid:{color:GC}},y2:{position:'right',ticks:{color:TC,font:{size:10}},grid:{display:false}}}}});
+  mkChart('pc-quality-trend',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Content Score',data:rows.map(r=>r.content_score_avg||0),borderColor:'#7c5ff7',fill:false,tension:0.4,borderWidth:2,pointRadius:3,yAxisID:'y'},
+    {label:'Image Pass%',data:rows.map(r=>(r.image_pass_rate||0)*100),borderColor:'#00ccb0',fill:false,tension:0.4,borderWidth:2,pointRadius:3,yAxisID:'y2'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{position:'left',ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(1)+'/10'},grid:{color:GC},min:5,max:10},y2:{position:'right',ticks:{color:TC,font:{size:10},callback:v=>v+'%'},grid:{display:false},min:60,max:100}}}});
+  mkChart('pc-speed-trend',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'Go-live days',data:rows.map(r=>r.avg_go_live_days||0),borderColor:'#f0a428',fill:false,tension:0.4,borderWidth:2,pointRadius:3,yAxisID:'y'},
+    {label:'Success Rate%',data:rows.map(r=>(r.sku_success_rate_30d||0)*100),borderColor:'#27c97e',fill:false,tension:0.4,borderWidth:2,pointRadius:3,yAxisID:'y2'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:TC,font:{size:10},boxWidth:10,padding:8}}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{position:'left',ticks:{color:TC,font:{size:10},callback:v=>v.toFixed(1)+'d'},grid:{color:GC}},y2:{position:'right',ticks:{color:TC,font:{size:10},callback:v=>v+'%'},grid:{display:false}}}}});
+  mkChart('pc-rev-trend',{type:'line',data:{labels:dates.map(fmtLbl),datasets:[
+    {label:'7D Rev/SKU',data:rows.map(r=>r.first_7day_rev_per_sku||0),borderColor:'#e85d8a',backgroundColor:'rgba(232,93,138,0.07)',fill:true,tension:0.4,borderWidth:2,pointRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:TC,font:{size:10}},grid:{display:false}},y:{ticks:{color:TC,font:{size:10},callback:v=>fB(v)},grid:{color:GC}}}}});
+  const tb=document.getElementById('tbl-pc-body');tb.innerHTML='';
+  rows.forEach(r=>tb.insertAdjacentHTML('beforeend',`<tr>
+    <td class="white">${fmtLbl(r.date)}</td><td>${dowN(r.date)}</td>
+    <td class="nr">${fK(r.new_skus_published||0)}</td>
+    <td class="nr ${(r.avg_go_live_days||99)<=8?'green':(r.avg_go_live_days||99)<=11?'amber':'red'}">${r.avg_go_live_days?r.avg_go_live_days.toFixed(1):'—'}</td>
+    <td class="nr ${(r.image_pass_rate||0)>=0.92?'green':(r.image_pass_rate||0)>=0.85?'amber':'red'}">${r.image_pass_rate?fP(r.image_pass_rate):'—'}</td>
+    <td class="nr ${(r.content_score_avg||0)>=8.0?'green':(r.content_score_avg||0)>=7.0?'amber':'red'}">${r.content_score_avg?r.content_score_avg.toFixed(1)+'/10':'—'}</td>
+    <td class="nr ${(r.skus_pending_publish||0)>25?'amber':''}">${fK(r.skus_pending_publish||0)}</td>
+    <td class="nr ${(r.skus_rejected||0)>3?'red':''}">${fK(r.skus_rejected||0)}</td>
+    <td class="nr">${r.first_7day_rev_per_sku?fB(r.first_7day_rev_per_sku):'—'}</td>
+    <td class="nr ${(r.sku_success_rate_30d||0)>=0.65?'green':(r.sku_success_rate_30d||0)>=0.55?'amber':'red'}">${r.sku_success_rate_30d?fP(r.sku_success_rate_30d):'—'}</td>
+    <td class="nr">${r.active_skus_total?fK(r.active_skus_total):'—'}</td>
+  </tr>`));
+  tb.insertAdjacentHTML('beforeend',`<tr class="tr-tot"><td>Period</td><td></td><td class="nr">${fK(pub)} total</td><td class="nr">${gld.toFixed(1)}d avg</td><td class="nr">${fP(ipr)}</td><td class="nr">${cs2.toFixed(1)}/10</td><td class="nr">—</td><td class="nr">${rej} total</td><td class="nr">${fB(rev7)}</td><td class="nr">${fP(suc)}</td><td class="nr">${act?fK(act):'—'}</td></tr>`);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  const cfg=lCfg();
+  const t=cfg.utitle||'eCom Dashboard';
+  document.getElementById('tb-title').textContent=t;
+  document.getElementById('sb-title').textContent=t;
+  if(cfg.u1)setTimeout(syncAll,400);
+  else document.getElementById('tb-meta').textContent='Click ⚙ Config to connect your Google Sheet';
+});
+</script>
+</body>
+</html>
